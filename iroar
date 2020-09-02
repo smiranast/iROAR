@@ -26,7 +26,7 @@ def main():
     count_parser.add_argument("-r" ,"--report", help = "Create report", action='store_true')
     count_parser.add_argument("-wj" ,"--writejson", help = "Write OAR statistics in json format (only OAR)", action='store_true')
     count_parser.add_argument("-iter", help = "Maximal number of iteration\n(if owntable = True; default=infinite)", type=int, default=np.inf, metavar='<int>')
-    count_parser.add_argument("-err", help = "Maximal absolute deviation\n(if owntable = True; default=0.05)", type=float, default=0.05, metavar='<float>')
+    count_parser.add_argument("-err", help = "Maximal absolute deviation\n(if owntable = True; default=0.1)", type=float, default=0.1, metavar='<float>')
     count_parser.add_argument("-v", "--verbosity", help = "Print messages to stdout, not only warnings and errors\n(default=False)", action='store_true')
     count_parser.set_defaults(func=Count.main)
     

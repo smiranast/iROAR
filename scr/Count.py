@@ -131,7 +131,7 @@ class OAR_counter:
         freq_clones_precalc_raw, freq_clones_precalc = dict(), dict()
         
         freq_clones_precalc_raw = pd.read_csv(f"{self.iroar_path}/aux/clonal_freq_{gene_type}.csv",
-                                              sep="\t", index_col="genes")
+                                              sep=",", index_col="genes")
         freq_clones_precalc_raw = freq_clones_precalc_raw.to_dict(orient='index')
         
         #form freq_clones_precalc_raw without stdev
@@ -782,7 +782,7 @@ def main(**kwargs):
         parser.add_argument("-r" ,"--report", help = "Create report", action='store_true')
         parser.add_argument("-wj" ,"--writejson", help = "Write OAR statistics in json format (only OAR)", action='store_true')
         parser.add_argument("-iter", help = "Maximal number of iteration\n(if owntable = True; default=infinite)", type=int, default=np.inf, metavar='<int>')
-        parser.add_argument("-err", help = "Maximal absolute deviation\n(if owntable = True; default=0.05)", type=float, default=0.05, metavar='<float>')
+        parser.add_argument("-err", help = "Maximal absolute deviation\n(if owntable = True; default=0.1)", type=float, default=0.1, metavar='<float>')
         parser.add_argument("-v", "--verbosity", help = "Print messages to stdout, not only warnings and errors\n(default=False)", action='store_true')
         args = parser.parse_args()
         
