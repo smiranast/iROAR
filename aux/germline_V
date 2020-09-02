@@ -1,0 +1,1825 @@
+{
+    "IGH": [
+        {
+            "name": "IGHV1-12",
+            "type": "P"
+        },
+	{
+            "name": "IGHV1-14",
+            "type": "P"
+        },
+	{
+            "name": "IGHV1-17",
+            "type": "P"
+        },
+	{
+            "name": "IGHV1-18",
+            "type": "F"
+        },
+        {
+            "name": "IGHV1-2",
+            "type": "F"
+        },
+        {
+            "name": "IGHV1-24",
+            "type": "F"
+        },
+        {
+            "name": "IGHV1-3",
+            "type": "F"
+        },
+        {
+            "name": "IGHV1-38-4",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV1-45",
+            "type": "F"
+        },
+        {
+            "name": "IGHV1-46",
+            "type": "F"
+        },
+        {
+            "name": "IGHV1-58",
+            "type": "F"
+        },
+        {
+            "name": "IGHV1-67",
+            "type": "P"
+        },
+        {
+            "name": "IGHV1-68",
+            "type": "P"
+        },
+
+        {
+            "name": "IGHV1-69",
+            "type": "F"
+        },
+        {
+            "name": "IGHV1-69-2",
+            "type": "F"
+        },
+        {
+            "name": "IGHV1-69D",
+            "type": "F"
+        },
+        {
+            "name": "IGHV1-8",
+            "type": "F"
+        },
+        {
+            "name": "IGHV1-NL1",
+            "type": "P"
+        },
+        {
+            "name": "IGHV1OR15-1",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV1OR15-2",
+            "type": "P"
+        },
+        {
+            "name": "IGHV1OR15-3",
+            "type": "P"
+        },
+        {
+            "name": "IGHV1OR15-4",
+            "type": "P"
+        },
+        {
+            "name": "IGHV1OR15-5",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV1OR15-9",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV1OR21-1",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV2-10",
+            "type": "P"
+        },
+        {
+            "name": "IGHV2-26",
+            "type": "F"
+        },
+        {
+            "name": "IGHV2-5",
+            "type": "F"
+        },
+        {
+            "name": "IGHV2-70",
+            "type": "F"
+        },
+        {
+            "name": "IGHV2-70D",
+            "type": "F"
+        },
+        {
+            "name": "IGHV2OR16-5",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV3-11",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-13",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-15",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-16",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV3-19",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-20",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-21",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-22",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-23",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-23D",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-25",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV3-29",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-30",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-30-2",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-30-22",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-30-3",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-30-33",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-30-42",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-30-5",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-30-52",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-32",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-33",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-33-2",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-35",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV3-36",
+            "type": "P"
+        },
+	{
+            "name": "IGHV3-37",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-38",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV3-38-3",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV3-41",
+            "type": "P"
+        },
+	{
+            "name": "IGHV3-42",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-42D",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-43",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-43D",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-47",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-48",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-49",
+            "type": "F"
+        },
+       {
+            "name": "IGHV3-50",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-52",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-53",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-54",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-57",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-6",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-60",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-62",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-63",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-64",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-64D",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-65",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-66",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-69-1",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-7",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-71",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-72",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-73",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-74",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-75",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-76",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-79",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3-9",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3-NL1",
+            "type": "F"
+        },
+        {
+            "name": "IGHV3OR15-7",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV3OR16-10",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV3OR16-11",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3OR16-12",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV3OR16-13",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV3OR16-14",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3OR16-15",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3OR16-16",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3OR16-6",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV3OR16-7",
+            "type": "P"
+        },
+        {
+            "name": "IGHV3OR16-8",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV3OR16-9",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV4-28",
+            "type": "F"
+        },
+        {
+            "name": "IGHV4-30-1",
+            "type": "F"
+        },
+        {
+            "name": "IGHV4-30-2",
+            "type": "F"
+        },
+        {
+            "name": "IGHV4-30-4",
+            "type": "F"
+        },
+        {
+            "name": "IGHV4-31",
+            "type": "F"
+        },
+        {
+            "name": "IGHV4-34",
+            "type": "F"
+        },
+        {
+            "name": "IGHV4-38-2",
+            "type": "F"
+        },
+        {
+            "name": "IGHV4-39",
+            "type": "F"
+        },
+        {
+            "name": "IGHV4-4",
+            "type": "F"
+        },
+        {
+            "name": "IGHV4-55",
+            "type": "P"
+        },
+        {
+            "name": "IGHV4-59",
+            "type": "F"
+        },
+        {
+            "name": "IGHV4-61",
+            "type": "F"
+        },
+        {
+            "name": "IGHV4-80",
+            "type": "P"
+        },
+        {
+            "name": "IGHV4OR15-8",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV5-10-1",
+            "type": "F"
+        },
+        {
+            "name": "IGHV5-51",
+            "type": "F"
+        },
+        {
+            "name": "IGHV5-78",
+            "type": "P"
+        },
+        {
+            "name": "IGHV6-1",
+            "type": "F"
+        },
+        {
+            "name": "IGHV7-27",
+            "type": "F"
+        },
+        {
+            "name": "IGHV7-34-1",
+            "type": "P"
+        },
+        {
+            "name": "IGHV7-4-1",
+            "type": "F"
+        },
+        {
+            "name": "IGHV7-40",
+            "type": "P"
+        },
+        {
+            "name": "IGHV7-56",
+            "type": "P"
+        },
+        {
+            "name": "IGHV7-77",
+            "type": "P"
+        },
+        {
+            "name": "IGHV7-81",
+            "type": "ORF"
+        },
+        {
+            "name": "IGHV7-NL1",
+            "type": "P"
+        },
+        {
+            "name": "IGHV8-51-1",
+            "type": "ORF"
+        }
+    ],
+    "IGK": [
+        {
+            "name": "IGKV1-12",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1-13",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1-16",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1-17",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1-27",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1-33",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1-37",
+            "type": "ORF"
+        },
+        {
+            "name": "IGKV1-39",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1-5",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1-6",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1-8",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1-9",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1-NL1",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1D-12",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1D-13",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1D-16",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1D-17",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1D-33",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1D-37",
+            "type": "ORF"
+        },
+        {
+            "name": "IGKV1D-39",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1D-42",
+            "type": "ORF"
+        },
+        {
+            "name": "IGKV1D-43",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1D-8",
+            "type": "F"
+        },
+        {
+            "name": "IGKV1OR-2",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1OR-3",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1OR-4",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1OR1-1",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1OR10-1",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1OR15-118",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1OR2-0",
+            "type": "ORF"
+        },
+        {
+            "name": "IGKV1OR2-1",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1OR2-108",
+            "type": "ORF"
+        },
+        {
+            "name": "IGKV1OR2-11",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1OR2-118",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1OR2-2",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1OR2-3",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1OR2-9",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1OR22-5",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1OR9-1",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1OR9-2",
+            "type": "P"
+        },
+        {
+            "name": "IGKV1ORY-1",
+            "type": "P"
+        },
+        {
+            "name": "IGKV2-18",
+            "type": "P"
+        },
+        {
+            "name": "IGKV2-24",
+            "type": "F"
+        },
+        {
+            "name": "IGKV2-28",
+            "type": "F"
+        },
+        {
+            "name": "IGKV2-29",
+            "type": "F"
+        },
+        {
+            "name": "IGKV2-30",
+            "type": "F"
+        },
+        {
+            "name": "IGKV2-4",
+            "type": "P"
+        },
+        {
+            "name": "IGKV2-40",
+            "type": "F"
+        },
+        {
+            "name": "IGKV2D-18",
+            "type": "P"
+        },
+        {
+            "name": "IGKV2D-24",
+            "type": "ORF"
+        },
+        {
+            "name": "IGKV2D-26",
+            "type": "F"
+        },
+        {
+            "name": "IGKV2D-28",
+            "type": "F"
+        },
+        {
+            "name": "IGKV2D-29",
+            "type": "F"
+        },
+        {
+            "name": "IGKV2D-30",
+            "type": "F"
+        },
+        {
+            "name": "IGKV2D-40",
+            "type": "F"
+        },
+        {
+            "name": "IGKV2OR2-7D",
+            "type": "P"
+        },
+        {
+            "name": "IGKV2OR22-4",
+            "type": "P"
+        },
+        {
+            "name": "IGKV3-11",
+            "type": "F"
+        },
+        {
+            "name": "IGKV3-15",
+            "type": "F"
+        },
+        {
+            "name": "IGKV3-20",
+            "type": "F"
+        },
+        {
+            "name": "IGKV3-7",
+            "type": "ORF"
+        },
+        {
+            "name": "IGKV3D-11",
+            "type": "F"
+        },
+        {
+            "name": "IGKV3D-15",
+            "type": "F"
+        },
+        {
+            "name": "IGKV3D-20",
+            "type": "F"
+        },
+        {
+            "name": "IGKV3D-7",
+            "type": "F"
+        },
+        {
+            "name": "IGKV3OR2-268",
+            "type": "ORF"
+        },
+        {
+            "name": "IGKV4-1",
+            "type": "F"
+        },
+        {
+            "name": "IGKV5-2",
+            "type": "F"
+        },
+        {
+            "name": "IGKV6-21",
+            "type": "F"
+        },
+        {
+            "name": "IGKV6D-21",
+            "type": "F"
+        },
+        {
+            "name": "IGKV6D-41",
+            "type": "ORF"
+        },
+        {
+            "name": "IGKV7-3",
+            "type": "P"
+        },
+        {
+            "name": "IGK-Intron",
+            "type": "P"
+        }
+    ],
+    "IGL": [
+        {
+            "name": "IGLV1-36",
+            "type": "F"
+        },
+        {
+            "name": "IGLV1-40",
+            "type": "F"
+        },
+        {
+            "name": "IGLV1-41",
+            "type": "ORF"
+        },
+        {
+            "name": "IGLV1-44",
+            "type": "F"
+        },
+        {
+            "name": "IGLV1-47",
+            "type": "F"
+        },
+        {
+            "name": "IGLV1-50",
+            "type": "ORF"
+        },
+        {
+            "name": "IGLV1-51",
+            "type": "F"
+        },
+        {
+            "name": "IGLV1-62",
+            "type": "P"
+        },
+        {
+            "name": "IGLV10-54",
+            "type": "F"
+        },
+        {
+            "name": "IGLV11-55",
+            "type": "ORF"
+        },
+        {
+            "name": "IGLV2-11",
+            "type": "F"
+        },
+        {
+            "name": "IGLV2-14",
+            "type": "F"
+        },
+        {
+            "name": "IGLV2-18",
+            "type": "F"
+        },
+        {
+            "name": "IGLV2-23",
+            "type": "F"
+        },
+        {
+            "name": "IGLV2-33",
+            "type": "ORF"
+        },
+        {
+            "name": "IGLV2-34",
+            "type": "P"
+        },
+        {
+            "name": "IGLV2-5",
+            "type": "P"
+        },
+        {
+            "name": "IGLV2-8",
+            "type": "F"
+        },
+        {
+            "name": "IGLV3-1",
+            "type": "F"
+        },
+        {
+            "name": "IGLV3-10",
+            "type": "F"
+        },
+        {
+            "name": "IGLV3-12",
+            "type": "F"
+        },
+        {
+            "name": "IGLV3-13",
+            "type": "P"
+        },
+        {
+            "name": "IGLV3-16",
+            "type": "F"
+        },
+        {
+            "name": "IGLV3-19",
+            "type": "F"
+        },
+        {
+            "name": "IGLV3-21",
+            "type": "F"
+        },
+        {
+            "name": "IGLV3-22",
+            "type": "F"
+        },
+        {
+            "name": "IGLV3-25",
+            "type": "F"
+        },
+        {
+            "name": "IGLV3-27",
+            "type": "F"
+        },
+        {
+            "name": "IGLV3-31",
+            "type": "P"
+        },
+        {
+            "name": "IGLV3-32",
+            "type": "ORF"
+        },
+        {
+            "name": "IGLV3-9",
+            "type": "F"
+        },
+        {
+            "name": "IGLV4-3",
+            "type": "F"
+        },
+        {
+            "name": "IGLV4-60",
+            "type": "F"
+        },
+        {
+            "name": "IGLV4-69",
+            "type": "F"
+        },
+        {
+            "name": "IGLV5-37",
+            "type": "F"
+        },
+        {
+            "name": "IGLV5-39",
+            "type": "F"
+        },
+        {
+            "name": "IGLV5-45",
+            "type": "F"
+        },
+        {
+            "name": "IGLV5-48",
+            "type": "ORF"
+        },
+        {
+            "name": "IGLV5-52",
+            "type": "F"
+        },
+        {
+            "name": "IGLV6-57",
+            "type": "F"
+        },
+        {
+            "name": "IGLV7-43",
+            "type": "F"
+        },
+        {
+            "name": "IGLV7-46",
+            "type": "F"
+        },
+        {
+            "name": "IGLV8-61",
+            "type": "F"
+        },
+        {
+            "name": "IGLV8OR8-1",
+            "type": "ORF"
+        },
+        {
+            "name": "IGLV9-49",
+            "type": "F"
+        }
+    ],
+    "TRA": [
+        {
+            "name": "TRAV1-1-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV1-2-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV10-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV11-A",
+            "type": "P"
+        },
+	{
+            "name": "TRAV11-1-A",
+            "type": "P"
+        },
+        {
+            "name": "TRAV12-1-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV12-2-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV12-3-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV13-1-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV13-2-A",
+            "type": "F"
+        },
+	{
+            "name": "TRAV14-1-A",
+            "type": "P"
+        },
+        {
+            "name": "TRAV14DV4-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV15-A",
+            "type": "P"
+        },
+        {
+            "name": "TRAV16-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV17-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV18-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV19-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV2-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV20-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV21-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV22-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV23DV6-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV24-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV25-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV26-1-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV26-2-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV27-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV28-A",
+            "type": "P"
+        },
+        {
+            "name": "TRAV29DV5-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV3-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV30-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV31-A",
+            "type": "P"
+        },
+        {
+            "name": "TRAV32-A",
+            "type": "P"
+        },
+        {
+            "name": "TRAV33-A",
+            "type": "P"
+        },
+        {
+            "name": "TRAV34-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV35-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV36DV7-A",
+            "type": "F"
+        },
+	{
+            "name": "TRAV37-A",
+            "type": "P"
+        },
+        {
+            "name": "TRAV38-1-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV38-2DV8-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV39-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV4-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV40-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV41-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV46-A",
+            "type": "P"
+        },
+        {
+            "name": "TRAV5-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV6-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV7-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV8-1-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV8-2-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV8-3-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV8-4-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV8-5-A",
+            "type": "P"
+        },
+        {
+            "name": "TRAV8-6-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV8-7-A",
+            "type": "P"
+        },
+        {
+            "name": "TRAV9-1-A",
+            "type": "F"
+        },
+        {
+            "name": "TRAV9-2-A",
+            "type": "F"
+        },
+        {
+            "name": "TRDV1-A",
+            "type": "F"
+        },
+        {
+            "name": "TRDV2-A",
+            "type": "F"
+        },
+        {
+            "name": "TRDV3-A",
+            "type": "F"
+        }
+    ],
+    "TRB": [
+        {
+            "name": "TRBV1",
+            "type": "P"
+        },
+        {
+            "name": "TRBV10-1",
+            "type": "F"
+        },
+        {
+            "name": "TRBV10-2",
+            "type": "F"
+        },
+        {
+            "name": "TRBV10-3",
+            "type": "F"
+        },
+        {
+            "name": "TRBV11-1",
+            "type": "F"
+        },
+        {
+            "name": "TRBV11-2",
+            "type": "F"
+        },
+        {
+            "name": "TRBV11-3",
+            "type": "F"
+        },
+        {
+            "name": "TRBV12-1",
+            "type": "P"
+        },
+        {
+            "name": "TRBV12-2",
+            "type": "P"
+        },
+        {
+            "name": "TRBV12-3",
+            "type": "F"
+        },
+        {
+            "name": "TRBV12-4",
+            "type": "F"
+        },
+        {
+            "name": "TRBV12-5",
+            "type": "F"
+        },
+        {
+            "name": "TRBV13",
+            "type": "F"
+        },
+        {
+            "name": "TRBV14",
+            "type": "F"
+        },
+        {
+            "name": "TRBV15",
+            "type": "F"
+        },
+        {
+            "name": "TRBV16",
+            "type": "F"
+        },
+        {
+            "name": "TRBV17",
+            "type": "ORF"
+        },
+        {
+            "name": "TRBV18",
+            "type": "F"
+        },
+        {
+            "name": "TRBV19",
+            "type": "F"
+        },
+        {
+            "name": "TRBV2",
+            "type": "F"
+        },
+        {
+            "name": "TRBV20-1",
+            "type": "F"
+        },
+        {
+            "name": "TRBV20OR9-2",
+            "type": "ORF"
+        },
+        {
+            "name": "TRBV21-1",
+            "type": "P"
+        },
+        {
+            "name": "TRBV21OR9-2",
+            "type": "P"
+        },
+	{
+            "name": "TRBV22-1",
+            "type": "P"
+        },
+        {
+            "name": "TRBV23-1",
+            "type": "ORF"
+        },
+        {
+            "name": "TRBV23OR9-2",
+            "type": "ORF"
+        },
+        {
+            "name": "TRBV24-1",
+            "type": "F"
+        },
+        {
+            "name": "TRBV24OR9-2",
+            "type": "ORF"
+        },
+        {
+            "name": "TRBV25-1",
+            "type": "F"
+        },
+	{
+            "name": "TRBV26OR9-2",
+            "type": "P"
+        },
+        {
+            "name": "TRBV26",
+            "type": "P"
+        },
+        {
+            "name": "TRBV26OR9-2",
+            "type": "P"
+        },
+        {
+            "name": "TRBV27",
+            "type": "F"
+        },
+        {
+            "name": "TRBV28",
+            "type": "F"
+        },
+        {
+            "name": "TRBV29-1",
+            "type": "F"
+        },
+        {
+            "name": "TRBV29OR9-2",
+            "type": "ORF"
+        },
+        {
+            "name": "TRBV3-1",
+            "type": "F"
+        },
+        {
+            "name": "TRBV3-2",
+            "type": "P"
+        },
+        {
+            "name": "TRBV30",
+            "type": "F"
+        },
+        {
+            "name": "TRBV4-1",
+            "type": "F"
+        },
+        {
+            "name": "TRBV4-2",
+            "type": "F"
+        },
+        {
+            "name": "TRBV4-3",
+            "type": "F"
+        },
+        {
+            "name": "TRBV5-1",
+            "type": "F"
+        },
+ 	{
+            "name": "TRBV5-2",
+            "type": "P"
+        },
+        {
+            "name": "TRBV5-3",
+            "type": "ORF"
+        },
+        {
+            "name": "TRBV5-4",
+            "type": "F"
+        },
+        {
+            "name": "TRBV5-5",
+            "type": "F"
+        },
+        {
+            "name": "TRBV5-6",
+            "type": "F"
+        },
+        {
+            "name": "TRBV5-7",
+            "type": "ORF"
+        },
+        {
+            "name": "TRBV5-8",
+            "type": "F"
+        },
+        {
+            "name": "TRBV6-1",
+            "type": "F"
+        },
+        {
+            "name": "TRBV6-2",
+            "type": "F"
+        },
+        {
+            "name": "TRBV6-3",
+            "type": "F"
+        },
+        {
+            "name": "TRBV6-4",
+            "type": "F"
+        },
+        {
+            "name": "TRBV6-5",
+            "type": "F"
+        },
+        {
+            "name": "TRBV6-6",
+            "type": "F"
+        },
+        {
+            "name": "TRBV6-7",
+            "type": "ORF"
+        },
+        {
+            "name": "TRBV6-8",
+            "type": "F"
+        },
+        {
+            "name": "TRBV6-9",
+            "type": "F"
+        },
+        {
+            "name": "TRBV7-1",
+            "type": "ORF"
+        },
+        {
+            "name": "TRBV7-2",
+            "type": "F"
+        },
+        {
+            "name": "TRBV7-3",
+            "type": "F"
+        },
+        {
+            "name": "TRBV7-4",
+            "type": "F"
+        },
+        {
+            "name": "TRBV7-5",
+            "type": "P"
+        },
+        {
+            "name": "TRBV7-6",
+            "type": "F"
+        },
+        {
+            "name": "TRBV7-7",
+            "type": "F"
+        },
+        {
+            "name": "TRBV7-8",
+            "type": "F"
+        },
+        {
+            "name": "TRBV7-9",
+            "type": "F"
+        },
+        {
+            "name": "TRBV8-1",
+            "type": "P"
+        },
+        {
+            "name": "TRBV8-2",
+            "type": "P"
+        },
+        {
+            "name": "TRBV9",
+            "type": "F"
+        },
+        {
+            "name": "TRBVA",
+            "type": "P"
+        },
+        {
+            "name": "TRBVAOR9-2",
+            "type": "P"
+        },
+        {
+            "name": "TRBVB",
+            "type": "P"
+        },
+        {
+            "name": "TRBVC",
+            "type": "P"
+        }
+    ],
+    "TRD": [
+        {
+            "name": "TRAV1-1-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV1-2-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV10-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV11-D",
+            "type": "P"
+        },
+        {
+            "name": "TRAV12-1-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV12-2-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV12-3-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV13-1-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV13-2-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV14DV4-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV16-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV17-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV18-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV19-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV2-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV20-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV21-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV22-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV23DV6-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV24-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV25-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV26-1-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV26-2-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV27-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV29DV5-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV3-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV30-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV34-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV35-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV36DV7-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV38-1-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV38-2DV8-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV39-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV4-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV40-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV41-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV5-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV6-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV7-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV8-1-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV8-2-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV8-3-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV8-4-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV8-6-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV8-7-D",
+            "type": "P"
+        },
+        {
+            "name": "TRAV9-1-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV9-2-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV14DV4-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV23DV6-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV29DV5-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV36DV7-D",
+            "type": "F"
+        },
+        {
+            "name": "TRAV38-2DV8-D",
+            "type": "F"
+        },
+        {
+            "name": "TRDV1-D",
+            "type": "F"
+        },
+        {
+            "name": "TRDV2-D",
+            "type": "F"
+        },
+        {
+            "name": "TRDV3-D",
+            "type": "F"
+        }
+    ],
+    "TRG": [
+        {
+            "name": "TRGV1",
+            "type": "ORF"
+        },
+        {
+            "name": "TRGV10",
+            "type": "ORF"
+        },
+        {
+            "name": "TRGV11",
+            "type": "ORF"
+        },
+        {
+            "name": "TRGV2",
+            "type": "F"
+        },
+        {
+            "name": "TRGV3",
+            "type": "F"
+        },
+        {
+            "name": "TRGV4",
+            "type": "F"
+        },
+        {
+            "name": "TRGV5",
+            "type": "F"
+        },
+        {
+            "name": "TRGV5P",
+            "type": "P"
+        },
+ 	{
+            "name": "TRGV6",
+            "type": "P"
+        },
+	{
+            "name": "TRGV7",
+            "type": "P"
+        },
+        {
+            "name": "TRGV8",
+            "type": "F"
+        },
+        {
+            "name": "TRGV9",
+            "type": "F"
+        },
+        {
+            "name": "TRGVA",
+            "type": "P"
+        }
+    ]
+}

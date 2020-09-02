@@ -1,0 +1,440 @@
+{
+    "IGH": [
+        {
+            "name": "IGHJ1",
+            "type": "F"
+        },
+        {
+            "name": "IGHJ1P",
+            "type": "P"
+        },
+        {
+            "name": "IGHJ2",
+            "type": "F"
+        },
+        {
+            "name": "IGHJ2P",
+            "type": "P"
+        },
+        {
+            "name": "IGHJ3",
+            "type": "F"
+        },
+        {
+            "name": "IGHJ3P",
+            "type": "P"
+        },
+        {
+            "name": "IGHJ4",
+            "type": "F"
+        },
+        {
+            "name": "IGHJ5",
+            "type": "F"
+        },
+        {
+            "name": "IGHJ6",
+            "type": "F"
+        }
+    ],
+    "IGK": [
+        {
+            "name": "IGKJ1",
+            "type": "F"
+        },
+        {
+            "name": "IGKJ2",
+            "type": "F"
+        },
+        {
+            "name": "IGKJ3",
+            "type": "F"
+        },
+        {
+            "name": "IGKJ4",
+            "type": "F"
+        },
+        {
+            "name": "IGKJ5",
+            "type": "F"
+        },
+        {
+            "name": "IGK-KDE",
+            "type": "P"
+        }
+    ],
+    "IGL": [
+        {
+            "name": "IGLJ1",
+            "type": "F"
+        },
+        {
+            "name": "IGLJ2",
+            "type": "F"
+        },
+        {
+            "name": "IGLJ3",
+            "type": "F"
+        },
+        {
+            "name": "IGLJ4",
+            "type": "ORF"
+        },
+        {
+            "name": "IGLJ5",
+            "type": "ORF"
+        },
+        {
+            "name": "IGLJ6",
+            "type": "F"
+        },
+        {
+            "name": "IGLJ7",
+            "type": "F"
+        }
+    ],
+    "TRA": [
+        {
+            "name": "TRAJ1",
+            "type": "ORF"
+        },
+        {
+            "name": "TRAJ10",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ11",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ12",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ13",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ14",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ15",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ16",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ17",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ18",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ19",
+            "type": "ORF"
+        },
+        {
+            "name": "TRAJ2",
+            "type": "ORF"
+        },
+        {
+            "name": "TRAJ20",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ21",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ22",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ23",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ24",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ25",
+            "type": "ORF"
+        },
+        {
+            "name": "TRAJ26",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ27",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ28",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ29",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ3",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ30",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ31",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ32",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ33",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ34",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ35",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ36",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ37",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ38",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ39",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ4",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ40",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ41",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ42",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ43",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ44",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ45",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ46",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ47",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ48",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ49",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ5",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ50",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ51",
+            "type": "P"
+        },
+        {
+            "name": "TRAJ52",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ53",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ54",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ55",
+            "type": "P"
+        },
+        {
+            "name": "TRAJ56",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ57",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ58",
+            "type": "ORF"
+        },
+        {
+            "name": "TRAJ59",
+            "type": "ORF"
+        },
+        {
+            "name": "TRAJ6",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ60",
+            "type": "P"
+        },
+        {
+            "name": "TRAJ61",
+            "type": "ORF"
+        },
+        {
+            "name": "TRAJ7",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ8",
+            "type": "F"
+        },
+        {
+            "name": "TRAJ9",
+            "type": "F"
+        }
+    ],
+    "TRB": [
+        {
+            "name": "TRBJ1-1",
+            "type": "F"
+        },
+        {
+            "name": "TRBJ1-2",
+            "type": "F"
+        },
+        {
+            "name": "TRBJ1-3",
+            "type": "F"
+        },
+        {
+            "name": "TRBJ1-4",
+            "type": "F"
+        },
+        {
+            "name": "TRBJ1-5",
+            "type": "F"
+        },
+        {
+            "name": "TRBJ1-6",
+            "type": "F"
+        },
+        {
+            "name": "TRBJ2-1",
+            "type": "F"
+        },
+        {
+            "name": "TRBJ2-2",
+            "type": "F"
+        },
+        {
+            "name": "TRBJ2-2P",
+            "type": "ORF"
+        },
+        {
+            "name": "TRBJ2-3",
+            "type": "F"
+        },
+        {
+            "name": "TRBJ2-4",
+            "type": "F"
+        },
+        {
+            "name": "TRBJ2-5",
+            "type": "F"
+        },
+        {
+            "name": "TRBJ2-6",
+            "type": "F"
+        },
+        {
+            "name": "TRBJ2-7",
+            "type": "F"
+        }
+    ],
+    "TRD": [
+        {
+            "name": "TRDJ1",
+            "type": "F"
+        },
+        {
+            "name": "TRDJ2",
+            "type": "F"
+        },
+        {
+            "name": "TRDJ3",
+            "type": "F"
+        },
+        {
+            "name": "TRDJ4",
+            "type": "F"
+        }
+    ],
+    "TRG": [
+        {
+            "name": "TRGJ1",
+            "type": "F"
+        },
+        {
+            "name": "TRGJ2",
+            "type": "F"
+        },
+        {
+            "name": "TRGJP",
+            "type": "F"
+        },
+        {
+            "name": "TRGJP1",
+            "type": "F"
+        },
+        {
+            "name": "TRGJP2",
+            "type": "F"
+        }
+    ]
+}
