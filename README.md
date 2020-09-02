@@ -13,4 +13,8 @@ Tool to adjust clonal count of VDJtool output table
 ## Installation
 1. Install the proper python3 version and all listed packages
 2. Add iROAR directory to PATH in .bash_profile
-3. On the first run germline V/D/J segments of will be downloaded if aux/germline_* files are absent
+3. Add the runfile execution permission
+```
+chmod +x .../iROAR/iroar
+```
+4. On the first run germline V/D/J segments of will be downloaded if aux/germline_* files are absent
