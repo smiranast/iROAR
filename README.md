@@ -9,6 +9,7 @@ Tool to adjust clonal count of VDJtool output table
 * numpy=1.16.2
 * pandas=0.24.2
 * requests=2.21.0
+* tqdm=4.43.0
 
 ## Installation
 1. Install the proper python3 version and all listed packages

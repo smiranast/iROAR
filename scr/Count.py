@@ -14,7 +14,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from math import ceil, isnan
 from datetime import datetime
+from scr.modules import adjust_frequency
 from scr.Merge import mean_oar_counter
+from scr.Filter import filter_subclones
 pd.options.mode.chained_assignment = None
 np.seterr(divide='ignore', invalid='ignore') #Disable numpy warnings (on OAR_module.clones_statistics)
 
@@ -35,7 +37,7 @@ class Bad_segment_counter:
         
 class OAR_counter:
     
-    def __init__(self, iroar_path, outframe, own_table, no_outliers, oar_lib_v, oar_lib_j, n_iter, err, filter_few, upper_only, min_oof_clones, short):
+    def __init__(self, iroar_path, outframe, own_table, no_outliers, oar_lib_v, oar_lib_j, n_iter, err, filter_few, upper_only, min_oof_clones, short, prefilt, indel_thr, seq_err):
         
         self.outframe = outframe
         self.own_table = own_table
@@ -54,6 +56,9 @@ class OAR_counter:
         self.genes_j = None
         self.clonal_freq_warning = True
         self.short = short
+        self.prefilt=prefilt
+        self.indel_thr=indel_thr
+        self.seq_err=seq_err
             
             
     #Add "-D" or "-A" to the end of TRA/TRD genes to distinguish normal and hybrid
@@ -65,7 +70,7 @@ class OAR_counter:
 
     #Add chain column because standard VDJtools output format doesn't have it
     def _get_chain(self, df): 
-        df["chains"] = df['j'].astype(str).str[:3]
+        df["chain"] = df['j'].astype(str).str[:3]
         return df
 
 
@@ -96,8 +101,8 @@ class OAR_counter:
     #previous function, which calculates for each chain separately
     def filter_outliers_old(self, df):
         df_new = pd.DataFrame()
-        for chain in df["chains"].unique():
-            df_chain = df.loc[df["chains"] == chain]
+        for chain in df["chain"].unique():
+            df_chain = df.loc[df["chain"] == chain]
             mask_zscore = (df_chain["count"] - df_chain["count"].mean())/df_chain["count"].std()
             mask_zscore = mask_zscore.fillna(0)
             mask_threshold = df_chain["count"] < 10
@@ -144,7 +149,7 @@ class OAR_counter:
         if_good = True
 
         for chain in self.chains:
-            total_clones_clain = df.loc[df["chains"] == chain].shape[0]
+            total_clones_clain = df.loc[df["chain"] == chain].shape[0]
             if total_clones_clain == 0:
                 for gene in gene_dict[chain]:
                     freq_clones[gene] = 0
@@ -172,7 +177,7 @@ class OAR_counter:
         gene_X, gene_Y, gene_OAR, gene_oof_n = [], [], [], []
         freq_clones = self.freq_clones_v if gene_type == "V" else self.freq_clones_j
         
-        total_reads = {chain: df.loc[df["chains"] == chain]["count"].sum() for chain in
+        total_reads = {chain: df.loc[df["chain"] == chain]["count"].sum() for chain in
                        ["IGH", "IGK", "IGL", "TRA", "TRB", "TRD", "TRG"]}
 
         for gene in gene_list:
@@ -320,16 +325,20 @@ class OAR_counter:
         j_OARs = np.array([v["OAR"] for v in J_dict.values()])
         
         v_OARs = v_OARs[~np.isnan(v_OARs)]
+
         V_error = abs(v_OARs - np.ones(v_OARs.shape[0]))
+        V_error_max = 0 if len(V_error) == 0 else V_error.max()
         if not self.v_only:
             j_OARs = j_OARs[~np.isnan(j_OARs)]
             J_error = abs(j_OARs - np.ones(j_OARs.shape[0]))
+            J_error_max = 0 if len(J_error) == 0 else J_error.max()
             error = std_one(np.append(v_OARs, j_OARs))
-            verb_mess = f'Iteration: {i_iter}\tStd error: {round(error, 7)}\tMax abs V error: {round(V_error.max(), 7)}\tMax abs J error: {round(J_error.max(), 7)}'
+            verb_mess = f'Iteration: {i_iter}\tStd error: {round(error, 7)}\tMax abs V error: {round(V_error_max, 7)}\tMax abs J error: {round(J_error_max, 7)}'
         else:
             J_error = np.zeros(1)
+            J_error_max = 0 if len(J_error) == 0 else J_error.max()
             error = std_one(v_OARs)
-            verb_mess = f'Iteration: {i_iter}\tStd error: {round(error, 7)}\tMax abs V error: {round(V_error.max(), 7)}'
+            verb_mess = f'Iteration: {i_iter}\tStd error: {round(error, 7)}\tMax abs V error: {round(V_error_max, 7)}'
         return error, verb_mess
         
     
@@ -340,7 +349,7 @@ class OAR_counter:
         "simple dictionary" - dictionary, used for clone_recount. Format: {<gene_name, str>: <OAR, float>}
         """
         
-        tmp_dir = self.iroar_path + '/tmp'
+        tmp_dir = output_dir + '/tmp'
         
         self.chains = chains
         self.v_only = v_only
@@ -366,12 +375,14 @@ class OAR_counter:
         for file, processed_file, filtered_file in zip(input_list, input_list_processed, input_list_filtered):
             df = pd.read_csv(file, delimiter="\t")
             df = self._get_chain(df)
-            df = df[df['chains'].isin(self.chains)]
+            df = df[df['chain'].isin(self.chains)]
+
             df = self._process_hyrid_v(df)
             with open(processed_file, 'wb') as f:
                 pickle.dump(df, f)
                 
-            df_f = self.filter_outliers(df) if self.no_outliers else df
+            df_f = filter_subclones(df, self.indel_thr, self.seq_err) if self.prefilt else df
+            df_f = self.filter_outliers(df_f) if self.no_outliers else df_f
             with open(filtered_file, 'wb') as f:
                 pickle.dump(df_f, f)
             
@@ -534,10 +545,10 @@ class OAR_counter:
             #remove -D and -A suffixes
             df["v"] = df["v"].apply(lambda x: "/".join(i.strip('-D') for i in x.split("/")))
             df["v"] = df["v"].apply(lambda x: "/".join(i.strip('-A') for i in x.split("/")))
-            df.drop(columns=["chains"])
+            df.drop(columns=["chain"])
             
             #recalculate frequency
-            df = self.adjust_frequency(df)
+            df = adjust_frequency(df, self.filter_few, if_adj=True)
     
             #adjust table to VDJtools output format
             if self.short:
@@ -549,40 +560,14 @@ class OAR_counter:
             
             if os.path.isfile(processed_file):
                 os.remove(processed_file)
-            
-
-    def adjust_frequency(self, df):
-        count = df['count']
-        
-        if self.filter_few:
-            total_sum = count.sum()
-            freq = count / total_sum            
-        else:
-            freq = df['freq']
-            
-        count_adj = df['count_adj'].astype("Int64")
-        chain = df['chains']
-        total_sum = count_adj.sum()
-        freq_adj = count_adj / total_sum
-        chainAdjSum = df.groupby('chains', sort=False)['count_adj'].transform('sum')
-        freq_adj_chain = np.nan_to_num(count_adj / chainAdjSum)
-
-        #reorder columns
-        df.drop(columns=['count_adj', 'count', 'freq', 'chains'], inplace=True)
-        df.insert(0, 'freqAdjChain', freq_adj_chain)
-        df.insert(0, 'freqAdj', freq_adj)
-        df.insert(0, 'freq', freq)
-        df.insert(0, 'chain', chain)
-        df.insert(0, 'countAdj', count_adj)
-        df.insert(0, 'count', count)
-
-        return df
     
     
 def std_one(x):
     #input - np.array
     #Calculated standard deviation where mean = 1
-    return np.sqrt(np.power(x - np.ones(x.shape[0]), 2).mean())
+    std = np.sqrt(np.power(x - np.ones(x.shape[0]), 2).mean())
+    std = 0 if np.isnan(std) else std
+    return std
  
 
 def simple_dict(data):
@@ -653,6 +638,7 @@ def to_vdjtools_format(df):
     df["count"] = df["countAdj"]
     df["freq"] = df["freqAdj"]
     df.drop(columns=['countAdj', 'freqAdj', 'freqAdjChain', 'chain'], inplace=True)
+    df = df.sort_values(by=["count"], ascending=False).reset_index(drop=True)
     return df
     
     
@@ -774,15 +760,18 @@ def main(**kwargs):
         parser.add_argument("-z", "--outliers", help = "Calculate OAR on data after filtering outliers with Z-test\n(if owntable = True; default=False)", action='store_true')
         parser.add_argument("-f" ,"--all_frame", help = "Calculate OAR using all clones, not only out-of-frame", action='store_true')
         parser.add_argument("-min_outframe", help = "Minimal out-of-frame clones threshold for OAR calculation.\nIf a segment is present within less clones than the specified value\nOAR is equal to 1(if outframe = True)", default=0, type=int, metavar='<int>')
-        parser.add_argument("-filter_few", help = "Don't show clones with counts less than N before ceiling (default - show all)", default=0, type=float, metavar='<float>')
+        parser.add_argument("-filter_few", help = "Don't show clones with counts less than N before ceiling (default=show all)", default=0, type=float, metavar='<float>')
         parser.add_argument("-u", "--upper_only", help = "Adjust only counts which have OAR > 1", action='store_true')
-        parser.add_argument("-m", "--method", help = "Method of sequencing library preparation (default - vjmplex)", choices=['vjmplex', 'vmplex'], default='vjmplex')
+        parser.add_argument("-m", "--method", help = "Method of sequencing library preparation (default=vjmplex)", choices=['vjmplex', 'vmplex'], default='vjmplex')
         parser.add_argument("--voar", help = "Library of OAR stats for V region in JSON format", type=str, default=[], metavar='<str>', nargs='+')
         parser.add_argument("--joar", help = "Library of OAR stats for J region in JSON format\nIf multiple V and J libs are used the number of --vlib files\nmust be equal to --jlib files!", type=str, default=[], metavar='<str>', nargs='+')
         parser.add_argument("-r" ,"--report", help = "Create report", action='store_true')
         parser.add_argument("-wj" ,"--writejson", help = "Write OAR statistics in json format (only OAR)", action='store_true')
         parser.add_argument("-iter", help = "Maximal number of iteration\n(if owntable = True; default=infinite)", type=int, default=np.inf, metavar='<int>')
         parser.add_argument("-err", help = "Maximal absolute deviation\n(if owntable = True; default=0.1)", type=float, default=0.1, metavar='<float>')
+        parser.add_argument("--filter", help = "Prefilter clonotypes by indels in CDR3 nucleotide sequences\n(similar to stand-alone Filter command, default=False)", action='store_true')
+        parser.add_argument("-se", "--seq_error", help = "Probable error of sequencing (default=0.01)", default=0.01, type=float, metavar='<float>')
+        parser.add_argument("-id", "--indel", help = "Maximal amount of indels to concidering CDR3s to be identical (default=1)", default=1, type=int, metavar='<int>')
         parser.add_argument("-v", "--verbosity", help = "Print messages to stdout, not only warnings and errors\n(default=False)", action='store_true')
         args = parser.parse_args()
         
@@ -823,8 +812,8 @@ def main(**kwargs):
     if not os.path.exists(iroar_path + '/aux'):
         os.makedirs(iroar_path + '/aux')
     
-    if not os.path.exists(iroar_path + '/tmp'):
-        os.makedirs(iroar_path + '/tmp')
+    if not os.path.exists(output_dir + '/tmp'):
+        os.makedirs(output_dir + '/tmp')
     
     if not os.path.isfile(iroar_path + "/aux/germline_V"):
         download_germline("V", iroar_path, verbosity)
@@ -858,7 +847,10 @@ def main(**kwargs):
                             filter_few=args.filter_few,
                             upper_only=args.upper_only,
                             min_oof_clones=args.min_outframe,
-                            short=args.long)                    
+                            short=args.long,
+                            prefilt=args.filter,
+                            indel_thr=args.indel,
+                            seq_err=args.seq_error)                    
     
     recounter.cloneCount_adjust(vdjtools_tables, output_dir, chains, v_only, verbosity)
     
