@@ -14,9 +14,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from math import ceil, isnan
 from datetime import datetime
-from scr.modules import adjust_frequency
+from scr.modules import *
 from scr.Merge import mean_oar_counter
-from scr.Filter import filter_subclones
+from scr.Filter import FilterSubclones
 pd.options.mode.chained_assignment = None
 np.seterr(divide='ignore', invalid='ignore') #Disable numpy warnings (on OAR_module.clones_statistics)
 
@@ -66,12 +66,6 @@ class OAR_counter:
         mask = df["v"].str.contains('TRAV') | df["v"].str.contains('TRDV')
         df.loc[mask, "v"] = df[mask].apply(lambda x: "/".join([i + "-" + x["j"][2] for i in x["v"].split("/")]), axis=1)
         return df
-    
-
-    #Add chain column because standard VDJtools output format doesn't have it
-    def _get_chain(self, df): 
-        df["chain"] = df['j'].astype(str).str[:3]
-        return df
 
 
     #filter outliers by count in each chain using z-score
@@ -116,20 +110,6 @@ class OAR_counter:
                 print("WARNING! Following genes meet only in outlier clones: {}".format(" ,".join([str(i) for i in uniq_bad])), file = sys.stderr)
         return df_new
     """
-
-
-    def _get_gene_list(self, region, func):
-        #Functional genes - "F" only
-        #Unfunctional - "ORF" and pseudogenes ("P")
-        gene_file = f"{self.iroar_path}/aux/germline_{region}"
-        with open(gene_file, "r") as file:
-            if func:
-                content = {k: [i["name"] for i in v] for k,v in json.load(file).items() if k in self.chains}
-            else:
-                content = {k :[i["name"] for i in v if i["type"] == "ORF" or i["type"] == "P"]
-                           for k,v in json.load(file).items() if k in self.chains}
-            return content
-
         
     def _check_clones(self, df, gene_dict, gene_type):
         #get the precalculated numbers of clones for each gene
@@ -224,21 +204,10 @@ class OAR_counter:
                 for k, v1,v2,v3,v4,v5 in zip(gene_list, chains, gene_reads, gene_clones, gene_OAR, gene_oof_n)}
 
 
-    def count_OAR(self, df, outframe, verbosity):   
+    def count_OAR(self, df, outframe, verbosity):
+        gene_names = gene_names_parser(self.iroar_path, self.chains)
         if outframe:
-            genes_notfunc_v = sum(self._get_gene_list("V", func=False).values(), [])
-            genes_notfunc_j = sum(self._get_gene_list("J", func=False).values(), [])
-            outframe_genes_mask = (df['v'].isin(genes_notfunc_v) | df['j'].isin(genes_notfunc_j))
-            uncomplete_mask = (df["v"].str.contains("\+") |
-                               df["j"].str.contains("\+") | 
-                                df["v"].str.contains("Intron") |
-                               df["j"].str.contains("KDE"))
-            outframe_cdr3_mask = (df["cdr3aa"].str.contains("_") | 
-                            df["cdr3aa"].str.contains("\*") |
-                            ~df["cdr3aa"].str.startswith("C") |
-                            ~(df["cdr3aa"].str.endswith("W") | df["cdr3aa"].str.endswith("F")))
-            
-            df = df[uncomplete_mask | outframe_cdr3_mask | outframe_genes_mask ]
+            df = gene_names.filter_outframes(df, outframes=True)
             
         if not (self.freq_clones_v and self.freq_clones_j):
             self.freq_clones_v, freq_clones_precalc_v, if_good_v = self._check_clones(df, self.genes_dict_v, "V")
@@ -360,8 +329,9 @@ class OAR_counter:
         
         
         if not (self.genes_v and self.genes_j):
-            self.genes_dict_v = self._get_gene_list("V", func=True)
-            self.genes_dict_j = self._get_gene_list("J", func=True)
+            gene_names = gene_names_parser(self.iroar_path, self.chains)
+            self.genes_dict_v = gene_names.get_gene_list("V", func="all")
+            self.genes_dict_j = gene_names.get_gene_list("J", func="all")
             self.genes_v = sum(self.genes_dict_v.values(), [])
             self.genes_j = sum(self.genes_dict_j.values(), [])
         
@@ -374,14 +344,16 @@ class OAR_counter:
         
         for file, processed_file, filtered_file in zip(input_list, input_list_processed, input_list_filtered):
             df = pd.read_csv(file, delimiter="\t")
-            df = self._get_chain(df)
+            df["chain"] = get_chain(df)
             df = df[df['chain'].isin(self.chains)]
 
             df = self._process_hyrid_v(df)
             with open(processed_file, 'wb') as f:
                 pickle.dump(df, f)
                 
-            df_f = filter_subclones(df, self.indel_thr, self.seq_err) if self.prefilt else df
+            Filter = FilterSubclones(self.indel_thr, self.seq_err, self.iroar_path)
+            df_f = Filter.filter_subclones(df) if self.prefilt else df
+            
             df_f = self.filter_outliers(df_f) if self.no_outliers else df_f
             with open(filtered_file, 'wb') as f:
                 pickle.dump(df_f, f)
@@ -832,7 +804,7 @@ def main(**kwargs):
                 print(f'VDJtools table {file} is found!')
                 
     if len(vdjtools_tables) == 0:
-        print("No VDJtools tabled is fount. Exiting")
+        print("No VDJtools tabled is found. Exiting")
         sys.exit(1)
     
     #main part

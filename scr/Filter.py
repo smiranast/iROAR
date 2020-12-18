@@ -1,141 +1,119 @@
 #!/usr/bin/env python
+import os
 import sys
 import argparse
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from scr.modules import adjust_frequency
-
-def GlobalAlignment(v, w):
-		sig = 1
-
-		s = [[0 for i in range(len(w)+1)] for j in range(len(v)+1)]
-		backtrack = [[0 for i in range(len(w)+1)] for j in range(len(v)+1)]
-		
-		for i in range(1, len(w)+1):
-			s[0][i] = -i*sig
-
-		for j in range(1, len(v)+1):
-			s[j][0] = -j*sig
-
-		for i in range(1, len(v)+1):
-			for j in range(1, len(w)+1):
-				mu = 0 if v[i-1] == w[j-1] else -1
-				score_list = s[i-1][j] - sig, s[i][j-1] - sig, s[i-1][j-1] + mu
-				s[i][j] = max(score_list)
-				backtrack[i][j] = score_list.index(s[i][j])
-
-		a, b = len(v), len(w)
-		score = s[a][b]
-
-		while a*b != 0:
-			if backtrack[a][b] == 0:
-				a -= 1
-				w = w[:b] + "-"+ w[b:]
-			elif backtrack[a][b] == 1:
-				b -= 1
-				v = v[:a] + "-"+ v[a:]
-			else:
-				a -= 1
-				b -= 1
-
-		while a != 0:
-			w = w[:0] + "-"+ w[0:]
-			a -= 1
-		while b != 0:
-			v = v[:0] + "-"+ v[0:]
-			b -= 1
-
-		return v, w
-	
-	
-def count_indels(align1, align2):
-	#Учитываются только инсерции и делеции, без замен
-	#Если есть хоть 1 замена, возвращается inf
-	#Делается на основе выравниваний
-	e = 0
-	for i, j in zip(align1, align2):
-		if i != j:
-			if (i == "-") or (j == "-"):
-				e += 1
-			else:
-				return np.inf
-	return e
+from scr.modules import *
 
 
-def check_subclones(df, indel_thr, seq_err):
-	#return an array, where index - subclone, value - real clone
-	cdr3_cor = np.full(len(df), None)
-	cdr3_cor_unique = set()
+class FilterSubclones:
+    
+    def __init__(self, indel_thr, seq_err, iroar_path):
+        self.indel_thr = indel_thr
+        self.seq_err = seq_err
+        self.iroar_path = iroar_path
+        
+    @staticmethod
+    def _DL_distance(s1, s2):
+        d = dict()
+        n, m = len(s1), len(s2)
+        for i in range(-1,n+1):
+            d[(i,-1)] = i+1
+        for j in range(-1,m+1):
+            d[(-1,j)] = j+1
 
-	for i in tqdm(reversed(range(len(df))), total=len(df)):
-		#If this clone doesn't contain another subclones
-		if i not in cdr3_cor_unique:
-			s1 = df.iloc[i]["cdr3nt"]
-			c1 = df.iloc[i]["count"]
-			for x in range(0, i):
+        for i in range(n):
+            for j in range(m):
+                cost = 0 if s1[i] == s2[j] else 1
 
-				s2 = df.iloc[x]["cdr3nt"]
-				c2 = df.iloc[x]["count"]
+        for i in range(n):
+            for j in range(m):
+                d[(i,j)] = min(d[(i-1,j)] + 1, d[(i,j-1)] + 1, d[(i-1,j-1)] + cost)
 
-				if c1 / (c1 + c2) <= seq_err:
-					a1, a2 = GlobalAlignment(s1, s2)
-					indels = count_indels(a1, a2)
+        return d[n-1,m-1]
 
-					if indels <= indel_thr:
-						cdr3_cor[i] = x
-						cdr3_cor_unique.add(x)
-						break
-				else:
-					break
-	return cdr3_cor
+    def _check_subclones(self, df):
+        #return an array, where index - subclone, value - real clone
+        cdr3_cor = np.full(len(df), None)
+        cdr3_cor_unique = set()
 
+        gene_names = gene_names_parser(self.iroar_path, get_chain(df).unique())
+        df_inframe = gene_names.filter_outframes(df, outframes=False, save_index=False)
+        df_outframe = gene_names.filter_outframes(df, outframes=True, save_index=False)
+        for i in tqdm(list(df_outframe.index)[::-1]):
+            #If this clone doesn't contain another subclones
+            if i not in cdr3_cor_unique:
+                s1 = df_outframe.loc[i, "cdr3nt"]
+                c1 = df_outframe.loc[i, "count"]
+                for x in [x for x in list(df_inframe.index) if x < i]:
 
-def filter_subclones(df, indel_thr, seq_err):
-	
-	df = df.sort_values(by=["count"], ascending=False).reset_index(drop=True)
-	cdr3_cor = check_subclones(df, indel_thr, seq_err)
-	df_filt = df.copy()
+                    s2 = df_inframe.loc[x, "cdr3nt"]
+                    c2 = df_inframe.loc[x, "count"]
 
-	for i, v in enumerate(cdr3_cor):
-		if v is not None:
-			df_filt.at[v, "count"] += df_filt.at[i, "count"]
-			df_filt = df_filt.drop(index=i)
-	df_filt = df_filt.sort_values(by=["count"], ascending=False).reset_index(drop=True)
-	df_filt = adjust_frequency(df_filt, filter_few=0, if_adj=False)
+                    if c1 / (c1 + c2) <= self.seq_err:
+                        dl = self._DL_distance(s1, s2)
 
-	n_filt = len(df) - len(df_filt)
-	if n_filt == 1:
-		print(f'{n_filt} clonotype was filtered')
-	else:
-		print(f'{n_filt} clonotypes were filtered')
-
-	return df_filt
+                        if dl <= self.indel_thr:
+                            cdr3_cor[i] = x
+                            cdr3_cor_unique.add(x)
+                            break
+                    else:
+                        break
+        return cdr3_cor
 
 
+    def filter_subclones(self, df):
+
+        df = df.sort_values(by=["count"], ascending=False).reset_index(drop=True)
+        cdr3_cor = self._check_subclones(df)
+        df_filt = df.copy()
+
+        for i, v in enumerate(cdr3_cor):
+            if v is not None:
+                df_filt.at[v, "count"] += df_filt.at[i, "count"]
+                df_filt = df_filt.drop(index=i)
+        df_filt = df_filt.sort_values(by=["count"], ascending=False).reset_index(drop=True)
+        df_filt = adjust_frequency(df_filt, filter_few=0, if_adj=False)
+
+        n_filt = len(df) - len(df_filt)
+        if n_filt == 1:
+            print(f'{n_filt} clonotype was filtered')
+        else:
+            print(f'{n_filt} clonotypes were filtered')
+
+        return df_filt
+
+
+    
 def main(**kwargs):
-	#### Argument parsers
-	args = kwargs.get('args', None)
-	if args is None:
-		parser = argparse.ArgumentParser(description='Filter clonotypes by indel and sequencing error thresholds.', formatter_class=argparse.RawTextHelpFormatter)
+    #### Argument parsers
+    args = kwargs.get('args', None)
+    if args is None:
+        parser = argparse.ArgumentParser(description='Filter clonotypes by indel and sequencing error thresholds.', formatter_class=argparse.RawTextHelpFormatter)
 
-		parser.add_argument("-i", "--input", help = "Path of input VDJtools table", type=str, metavar='<input>', required=True)
-		parser.add_argument("-o", "--output",  help = "Path of output VDJtools table", type=str, metavar='<output>', required=True)
-		parser.add_argument("-se", "--seq_error", help = "Probable error of sequencing (default=0.01)", default=0.01, type=float, metavar='<float>')
-		parser.add_argument("-id", "--indel",  help = "Maximal amount of indels to concidering CDR3s to be identical (default=1)", default=1, type=int, metavar='<int>')
-		args = parser.parse_args()
-		
-		if len(sys.argv)==1:
-			parser.print_help(sys.stderr)
-			sys.exit(1) 		
-	####
-	#main part
-	df = pd.read_csv(args.input, delimiter="\t")	
-	df_filt = filter_subclones(df, indel_thr=args.indel, seq_err=args.seq_error)
-	df_filt.to_csv(args.output, sep="\t", index=False)
+        parser.add_argument("-i", "--input", help = "Path of input VDJtools table", type=str, metavar='<input>', required=True)
+        parser.add_argument("-o", "--output",  help = "Path of output VDJtools table", type=str, metavar='<output>', required=True)
+        parser.add_argument("-se", "--seq_error", help = "Probable error of sequencing (default=0.01)", default=0.01, type=float, metavar='<float>')
+        parser.add_argument("-id", "--indel",  help = "Maximal amount of indels to concidering CDR3s to be identical (default=1)", default=1, type=int, metavar='<int>')
+        args = parser.parse_args()
+        
+        if len(sys.argv)==1:
+            parser.print_help(sys.stderr)
+            sys.exit(1)         
+    ####
+    #main part
+    iroar_path = os.path.dirname(os.path.realpath(__file__))
+    iroar_path = "/".join(iroar_path.split("/")[:-1])
+    
+    df = pd.read_csv(args.input, delimiter="\t")   
+    Filter = FilterSubclones(indel_thr=args.indel, seq_err=args.seq_error, iroar_path=iroar_path)
+    df_filt = Filter.filter_subclones(df)
+    df_filt.to_csv(args.output, sep="\t", index=False)
 
-	print("done")
-	
-	
+    print("done")
+    
+    
 if __name__ == "__main__":
-	main()
+    main()
