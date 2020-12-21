@@ -37,7 +37,7 @@ class Bad_segment_counter:
         
 class OAR_counter:
     
-    def __init__(self, iroar_path, outframe, own_table, no_outliers, oar_lib_v, oar_lib_j, n_iter, err, filter_few, upper_only, min_oof_clones, short, prefilt, indel_thr, seq_err):
+    def __init__(self, iroar_path, outframe, own_table, no_outliers, oar_lib_v, oar_lib_j, n_iter, err, filter_few, upper_only, min_oof_clones, short, prefilt, indel_thr, seq_err, filter_type):
         
         self.outframe = outframe
         self.own_table = own_table
@@ -59,6 +59,7 @@ class OAR_counter:
         self.prefilt=prefilt
         self.indel_thr=indel_thr
         self.seq_err=seq_err
+        self.filter_type=filter_type
             
             
     #Add "-D" or "-A" to the end of TRA/TRD genes to distinguish normal and hybrid
@@ -351,7 +352,7 @@ class OAR_counter:
             with open(processed_file, 'wb') as f:
                 pickle.dump(df, f)
                 
-            Filter = FilterSubclones(self.indel_thr, self.seq_err, self.iroar_path)
+            Filter = FilterSubclones(self.indel_thr, self.seq_err, self.filter_type, self.iroar_path)
             df_f = Filter.filter_subclones(df) if self.prefilt else df
             
             df_f = self.filter_outliers(df_f) if self.no_outliers else df_f
@@ -743,6 +744,7 @@ def main(**kwargs):
         parser.add_argument("--filter", help = "Prefilter clonotypes by indels in CDR3 nucleotide sequences\n(similar to stand-alone Filter command, default=False)", action='store_true')
         parser.add_argument("-se", "--seq_error", help = "Probable error of sequencing (default=0.01)", default=0.01, type=float, metavar='<float>')
         parser.add_argument("-id", "--indel", help = "Maximal amount of indels to concidering CDR3s to be identical (default=1)", default=1, type=int, metavar='<int>')
+        parser.add_argument("-ft", "--filter_type",  help = "Which frame groups are compared during the filtering (default=all)", choices=['IinO', 'OinI', 'all'], default="all", metavar='<list>', nargs='+')
         parser.add_argument("-v", "--verbosity", help = "Print messages to stdout, not only warnings and errors\n(default=False)", action='store_true')
         args = parser.parse_args()
         
@@ -821,7 +823,8 @@ def main(**kwargs):
                             short=args.long,
                             prefilt=args.filter,
                             indel_thr=args.indel,
-                            seq_err=args.seq_error)                    
+                            seq_err=args.seq_error,
+                            filter_type=args.filter_type)                    
     
     recounter.cloneCount_adjust(vdjtools_tables, output_dir, chains, v_only, verbosity)
     
