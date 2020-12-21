@@ -517,7 +517,6 @@ class OAR_counter:
             #remove -D and -A suffixes
             df["v"] = df["v"].apply(lambda x: "/".join(i.strip('-D') for i in x.split("/")))
             df["v"] = df["v"].apply(lambda x: "/".join(i.strip('-A') for i in x.split("/")))
-            df.drop(columns=["chain"])
             
             #recalculate frequency
             df = adjust_frequency(df, self.filter_few, if_adj=True)

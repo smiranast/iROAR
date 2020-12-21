@@ -39,7 +39,7 @@ class FilterSubclones:
         cdr3_cor = np.full(len(df), None)
         cdr3_cor_unique = set()
 
-        gene_names = gene_names_parser(self.iroar_path, get_chain(df).unique())
+        gene_names = gene_names_parser(self.iroar_path, df["chain"].unique())
         df_inframe = gene_names.filter_outframes(df, outframes=False, save_index=False)
         df_outframe = gene_names.filter_outframes(df, outframes=True, save_index=False)
         for i in tqdm(list(df_outframe.index)[::-1]):
@@ -67,6 +67,7 @@ class FilterSubclones:
     def filter_subclones(self, df):
 
         df = df.sort_values(by=["count"], ascending=False).reset_index(drop=True)
+        df["chain"] = get_chain(df)
         cdr3_cor = self._check_subclones(df)
         df_filt = df.copy()
 
@@ -83,6 +84,7 @@ class FilterSubclones:
         else:
             print(f'{n_filt} clonotypes were filtered')
 
+        df_filt.drop(columns=["chain", "ind"], inplace=True)
         return df_filt
 
 
