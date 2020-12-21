@@ -27,7 +27,7 @@ class FilterSubclones:
 
         for i in range(n):
             for j in range(m):
-                cost = 0 if s1[i] == s2[j] else 1
+                cost = 0 if s1[i] == s2[j] else 2
 
         for i in range(n):
             for j in range(m):
