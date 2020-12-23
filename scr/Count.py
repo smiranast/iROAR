@@ -37,7 +37,7 @@ class Bad_segment_counter:
         
 class OAR_counter:
     
-    def __init__(self, iroar_path, outframe, own_table, no_outliers, oar_lib_v, oar_lib_j, n_iter, err, filter_few, upper_only, min_oof_clones, short, prefilt, indel_thr, seq_err, filter_type):
+    def __init__(self, iroar_path, outframe, own_table, no_outliers, oar_lib_v, oar_lib_j, n_iter, err, filter_few, upper_only, min_oof_clones, short, prefilt, collision_filter):
         
         self.outframe = outframe
         self.own_table = own_table
@@ -57,9 +57,7 @@ class OAR_counter:
         self.clonal_freq_warning = True
         self.short = short
         self.prefilt=prefilt
-        self.indel_thr=indel_thr
-        self.seq_err=seq_err
-        self.filter_type=filter_type
+        self.collision_filter=collision_filter
             
             
     #Add "-D" or "-A" to the end of TRA/TRD genes to distinguish normal and hybrid
@@ -130,14 +128,13 @@ class OAR_counter:
         if_good = True
 
         for chain in self.chains:
-            total_clones_clain = df.loc[df["chain"] == chain].shape[0]
-            if total_clones_clain == 0:
+            total_clones_chain = df.loc[df["chain"] == chain].shape[0]
+            if total_clones_chain == 0:
                 for gene in gene_dict[chain]:
                     freq_clones[gene] = 0
             else:
                 #use pseudocounts to get rid from freq = 0
                 #despite situations when there is no clones for the chain
-                total_clones_chain = len(self.genes_dict_v[chain]) if gene_type == "V" else len(self.genes_dict_j[chain])
                 for gene in gene_dict[chain]:
                     freq_clones[gene] = df.loc[df[gene_type.lower()].str.contains(gene), ["count", gene_type.lower()]].shape[0]
                     freq_clones[gene] += 1
@@ -352,9 +349,7 @@ class OAR_counter:
             with open(processed_file, 'wb') as f:
                 pickle.dump(df, f)
                 
-            Filter = FilterSubclones(self.indel_thr, self.seq_err, self.filter_type, self.iroar_path)
-            df_f = Filter.filter_subclones(df) if self.prefilt else df
-            
+            df_f = self.collision_filter.filter_subclones(df) if self.prefilt else df
             df_f = self.filter_outliers(df_f) if self.no_outliers else df_f
             with open(filtered_file, 'wb') as f:
                 pickle.dump(df_f, f)
@@ -364,7 +359,7 @@ class OAR_counter:
             
             if verbosity:
                 print(f'Calculating primary reads/clones statistics for {os.path.basename(file)}')
-            
+
             for k, v in self.V_dict_meta.items():
                 v["chain"] = V_dict[k]["chain"]
                 v["reads"].append(V_dict[k]["reads"])
@@ -745,6 +740,7 @@ def main(**kwargs):
         parser.add_argument("-se", "--seq_error", help = "Probable error of sequencing (default=0.01)", default=0.01, type=float, metavar='<float>')
         parser.add_argument("-id", "--indel", help = "Maximal amount of indels to concidering CDR3s to be identical (default=1)", default=1, type=int, metavar='<int>')
         parser.add_argument("-ft", "--filter_type",  help = "Which frame groups are compared during the filtering (default=all)", choices=['IinO', 'OinI', 'all'], default="all", metavar='<list>', nargs='+')
+        parser.add_argument("-if", "--iterative_filter",  help = "Apply itterative collision merge (default for --filter_type=all)", action='store_true')   
         parser.add_argument("-v", "--verbosity", help = "Print messages to stdout, not only warnings and errors\n(default=False)", action='store_true')
         args = parser.parse_args()
         
@@ -809,6 +805,12 @@ def main(**kwargs):
         sys.exit(1)
     
     #main part
+    collision_filter =  FilterSubclones(args.indel,
+                              args.seq_error,
+                              args.filter_type,
+                              args.iterative_filter,
+                              iroar_path)
+            
     recounter = OAR_counter(iroar_path=iroar_path,
                             outframe=outframe,
                             own_table=owntable,
@@ -822,9 +824,7 @@ def main(**kwargs):
                             min_oof_clones=args.min_outframe,
                             short=args.long,
                             prefilt=args.filter,
-                            indel_thr=args.indel,
-                            seq_err=args.seq_error,
-                            filter_type=args.filter_type)                    
+                            collision_filter=collision_filter)                    
     
     recounter.cloneCount_adjust(vdjtools_tables, output_dir, chains, v_only, verbosity)
     

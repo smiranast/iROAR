@@ -32,6 +32,7 @@ def main():
     count_parser.add_argument("-se", "--seq_error", help = "Probable error of sequencing (default=0.01)", default=0.01, type=float, metavar='<float>')
     count_parser.add_argument("-id", "--indel", help = "Maximal amount of indels to concidering CDR3s to be identical (default=1)", default=1, type=int, metavar='<int>')    
     count_parser.add_argument("-ft", "--filter_type",  help = "Which frame groups are compared during the filtering (default=all)", choices=['IinO', 'OinI', 'all'], default="all", metavar='<list>', nargs='+')    
+    count_parser.add_argument("-if", "--iterative_filter",  help = "Apply itterative collision merge (default for --filter_type=all)", action='store_true')   
     count_parser.add_argument("-v", "--verbosity", help = "Print messages to stdout, not only warnings and errors\n(default=False)", action='store_true')
     count_parser.set_defaults(func=Count.main)
     
@@ -50,6 +51,7 @@ def main():
     filter_parser.add_argument("-se", "--seq_error", help = "Probable error of sequencing", default=0.01, type=float, metavar='<float>')
     filter_parser.add_argument("-id", "--indel",  help = "Maximal amount of indels to concidering CDR3s to be identical", default=1, type=int, metavar='<int>')
     filter_parser.add_argument("-ft", "--filter_type",  help = "Which frame groups are compared during the filtering (default=all)", choices=['IinO', 'OinI', 'all'], default="all", metavar='<list>', nargs='+')
+    filter_parser.add_argument("-if", "--iterative_filter",  help = "Apply itterative collision merge (default for --filter_type=all)", action='store_true')   
     filter_parser.set_defaults(func=Filter.main)
     
     subargs,extra_args = parser.parse_known_args()
