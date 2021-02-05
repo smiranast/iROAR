@@ -28,6 +28,7 @@ def main():
     count_parser.add_argument("-wj" ,"--writejson", help = "Write OAR statistics in json format (only OAR)", action='store_true')
     count_parser.add_argument("-iter", help = "Maximal number of iteration\n(if owntable = True; default=infinite)", type=int, default=np.inf, metavar='<int>')
     count_parser.add_argument("-err", help = "Maximal absolute deviation\n(if owntable = True; default=0.1)", type=float, default=0.1, metavar='<float>')
+    count_parser.add_argument("-mt", "--momentum", help = "OAR momentum on each step. Possible values: [0.01;1] (default=1.0)", type=float, default=1.0, metavar='<float>')
     count_parser.add_argument("--filter", help = "Prefilter clonotypes by indels in CDR3 nucleotide sequences\n(similar to stand-alone Filter command, default=False)", action='store_true')
     count_parser.add_argument("-se", "--seq_error", help = "Probable error of sequencing (default=0.01)", default=0.01, type=float, metavar='<float>')
     count_parser.add_argument("-id", "--indel", help = "Maximal amount of indels to concidering CDR3s to be identical (default=1)", default=1, type=int, metavar='<int>')    

@@ -37,7 +37,7 @@ class Bad_segment_counter:
         
 class OAR_counter:
     
-    def __init__(self, iroar_path, outframe, own_table, no_outliers, oar_lib_v, oar_lib_j, n_iter, err, filter_few, upper_only, min_oof_clones, short, prefilt, collision_filter):
+    def __init__(self, iroar_path, outframe, own_table, no_outliers, oar_lib_v, oar_lib_j, n_iter, err, filter_few, upper_only, min_oof_clones, short, prefilt, collision_filter, momentum):
         
         self.outframe = outframe
         self.own_table = own_table
@@ -56,8 +56,9 @@ class OAR_counter:
         self.genes_j = None
         self.clonal_freq_warning = True
         self.short = short
-        self.prefilt=prefilt
-        self.collision_filter=collision_filter
+        self.prefilt = prefilt
+        self.collision_filter = collision_filter
+        self.momentum = momentum
             
             
     #Add "-D" or "-A" to the end of TRA/TRD genes to distinguish normal and hybrid
@@ -190,7 +191,10 @@ class OAR_counter:
                 or (self.upper_only and OAR < 1) #Change OAR coefficient to not less than 1
                 or (self.v_only and gene_type == "j"))): # Ignore J-genes OAR for the further calculation
                     OAR = 1.
-                
+            
+            if not isnan(OAR):
+                OAR = OAR**self.momentum   
+ 
             gene_OAR.append(OAR)
             
             if not isnan(OAR) and outframe and int(clones) >= self.min_oof_clones:
@@ -638,7 +642,7 @@ def draw_plot(std_dict, iter_range, threshold, gene_type, path):
     plt.savefig(path, format="png")
 
     
-def make_report(args, tables, reports_dir, prefix, region_dict, region, threshold):
+def make_report(args, tables, reports_dir, prefix, region_dict, region, threshold, momentum):
     pd.set_option('display.max_colwidth', -1)
     #Info about input arguments
     df_args = pd.DataFrame.from_dict(args.__dict__, orient='index')
@@ -665,6 +669,7 @@ def make_report(args, tables, reports_dir, prefix, region_dict, region, threshol
     df_stat[reads_cols] = pd.DataFrame(df_stat["reads"].tolist(), index=df_stat.index)
     df_stat[clones_cols] = pd.DataFrame(df_stat["clones"].tolist(), index=df_stat.index)
     df_stat = df_stat[["genes", "chain"] + reads_cols + clones_cols + ["OAR", "sample"]]
+    df_stat["OAR"] = pd.to_numeric(df_stat["OAR"]).pow(1. / momentum)
     
     df_stat.columns=pd.MultiIndex.from_product([[f'General statistics information for {region} region'],df_stat.columns])
     report_stat = df_stat.to_html(index=False)
@@ -736,6 +741,7 @@ def main(**kwargs):
         parser.add_argument("-wj" ,"--writejson", help = "Write OAR statistics in json format (only OAR)", action='store_true')
         parser.add_argument("-iter", help = "Maximal number of iteration\n(if owntable = True; default=infinite)", type=int, default=np.inf, metavar='<int>')
         parser.add_argument("-err", help = "Maximal absolute deviation\n(if owntable = True; default=0.1)", type=float, default=0.1, metavar='<float>')
+        parser.add_argument("-mt","--momentum", help = "OAR momentum on each step. Possible values: [0.01;1] (default=1.0)", type=float, default=1.0, metavar='<float>')
         parser.add_argument("--filter", help = "Prefilter clonotypes by indels in CDR3 nucleotide sequences\n(similar to stand-alone Filter command, default=False)", action='store_true')
         parser.add_argument("-se", "--seq_error", help = "Probable error of sequencing (default=0.01)", default=0.01, type=float, metavar='<float>')
         parser.add_argument("-id", "--indel", help = "Maximal amount of indels to concidering CDR3s to be identical (default=1)", default=1, type=int, metavar='<int>')
@@ -757,6 +763,8 @@ def main(**kwargs):
     oar_lib_j = args.joar
     v_only = True if args.method == "vmplex" else False
     chains = args.chains.split(",")
+    momentum = args.momentum
+    momentum = 1 if momentum > 1 else 0.01 if momentum < 0.01 else momentum
     
     iroar_path = os.path.dirname(os.path.realpath(__file__))
     iroar_path = "/".join(iroar_path.split("/")[:-1])
@@ -824,7 +832,8 @@ def main(**kwargs):
                             min_oof_clones=args.min_outframe,
                             short=args.long,
                             prefilt=args.filter,
-                            collision_filter=collision_filter)                    
+                            collision_filter=collision_filter,
+                            momentum=momentum)                    
     
     recounter.cloneCount_adjust(vdjtools_tables, output_dir, chains, v_only, verbosity)
     
@@ -833,9 +842,9 @@ def main(**kwargs):
         reports_dir = output_dir + "/" + "iROAR_reports"
         if not os.path.exists(reports_dir):
             os.makedirs(reports_dir)
-        make_report(args, vdjtools_tables, reports_dir, prefix, recounter.V_dict_meta, "V", args.err)
+        make_report(args, vdjtools_tables, reports_dir, prefix, recounter.V_dict_meta, "V", args.err, momentum)
         if not v_only:
-            make_report(args, vdjtools_tables, reports_dir, prefix, recounter.J_dict_meta, "J", args.err)
+            make_report(args, vdjtools_tables, reports_dir, prefix, recounter.J_dict_meta, "J", args.err, momentum)
     if args.writejson: #
         write_stat_jsons(output_dir + "/" + prefix, recounter.V_dict_meta, "V")
         if not v_only:
