@@ -588,7 +588,7 @@ def vdjtools_format_check(file):
     #check "count" column separately as it can be both int and float
     if not "count" in df.columns:
         return False
-    elif not all((df["count"].map(type) == int).array + (df["count"].map(type) == float).array):
+    elif not all((df["count"].map(type) == int).to_numpy() + (df["count"].map(type) == float).to_numpy()):
         return False
         
     columns = {"freq": float, "cdr3nt": str, "cdr3aa": str, "v": str, "d": str, "j":str}
