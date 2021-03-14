@@ -11,7 +11,6 @@ import string
 import pickle
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from math import ceil, isnan
 from datetime import datetime
 from scr.modules import *
@@ -624,24 +623,7 @@ def json_df_converter(json_data):
         sample.append(v["sample"])
     return pd.DataFrame({"genes": genes, "chain": chain, "reads": reads, "clones": clones, "OAR": oar, "sample": sample})
     
-    
-def draw_plot(std_dict, iter_range, threshold, gene_type, path):
-    fig, ax = plt.subplots(figsize=(12, 8))
-    for chain, errors in std_dict.items():
-        plt.plot(iter_range, errors, label=chain)
-    plt.plot(iter_range, np.ones(max(iter_range))*threshold, "--", label="Threshold")
-    plt.xlabel("Iterations", fontsize=20)
-    plt.ylabel("STD", fontsize=20)
-    
-    xtics_names = np.append(np.arange(1, max(iter_range), max(iter_range) // 5 or 1), np.array([max(iter_range)]))
-    plt.xticks(ticks=xtics_names, labels=xtics_names, fontsize=14)
-    plt.yticks(fontsize=14)
-    plt.title(f"Standard deviation of {gene_type} genes OAR for each iteration", fontsize=20)
-    plt.grid()
-    plt.legend(fontsize=14)
-    plt.savefig(path, format="png")
 
-    
 def make_report(args, tables, reports_dir, prefix, region_dict, region, threshold, momentum):
     pd.set_option('display.max_colwidth', -1)
     #Info about input arguments
@@ -702,11 +684,6 @@ def make_report(args, tables, reports_dir, prefix, region_dict, region, threshol
 
     #merge all previous HTML subreports to one file
     report_total = "<br><br>".join([report_args, report_info, report_stat, report_std_tot, report_std_iter])
-    
-    # show report_std_iter data as plot
-    if len(list(iter_std.values())[0]) > 1:
-        draw_plot(iter_std, iter_range, threshold, region, path=f'{reports_dir}/{prefix}_plot_{region}.png')
-        report_total += f"<br><br><img src='{prefix}_plot_{region}.png'>"
     
     #write report to file
     with open(f'{reports_dir}/report_{prefix}_{region}.html', "w") as f:
