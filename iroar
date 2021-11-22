@@ -5,6 +5,7 @@ import numpy as np
 import scr.Count as Count
 import scr.Merge as Merge
 import scr.Filter as Filter
+import scr.Bias as Bias
 
 
 def main():
@@ -55,6 +56,15 @@ def main():
     filter_parser.add_argument("-if", "--iterative_filter",  help = "Apply itterative collision merge (default for --filter_type=all)", action='store_true')   
     filter_parser.set_defaults(func=Filter.main)
     
+
+    bias_parser = subparsers.add_parser("Bias", help='Introduce an artificial OAR bias in VDJtools repertoire table.', formatter_class=argparse.RawTextHelpFormatter)    
+    bias_parser.add_argument("-i", "--input", help = "Path of input VDJtools table", type=str, metavar='<input>', required=True)
+    bias_parser.add_argument("-o", "--output",  help = "Path of biased VDJtools table ", type=str, metavar='<output>', required=True)
+    bias_parser.add_argument("--seed",  help = "Randomization seed (default=0)", type=int, metavar='<int>', default=0)
+    bias_parser.add_argument("-m", "--method", help = "Method of sequencing library preparation (default=vjmplex)", choices=['vjmplex', 'vmplex'], default='vjmplex')
+    bias_parser.add_argument("--noise", help = "Add random noise in bias for each clone", action='store_true')
+    bias_parser.set_defaults(func=Bias.main)
+
     subargs,extra_args = parser.parse_known_args()
     
     if len(sys.argv)==1:
