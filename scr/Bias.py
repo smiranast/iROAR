@@ -4,6 +4,7 @@ import sys
 import argparse
 import numpy as np
 import pandas as pd
+from scipy.stats import t
 
 class OARbias:
     
@@ -46,10 +47,14 @@ class OARbias:
         
 def logbias(n=1, seed=0):
     np.random.seed(seed)
-    a = 2**np.random.normal(1, 0.21, n) - 1
-    ind = sorted(np.random.choice(np.arange(0,n), n // 2, replace=False))
-    a[ind] **= -1
-    return a
+    n2 = int(1.2*n)
+    a = t.rvs(loc=1, scale=0.5, df=5, size=n2)
+    #a = a[(a >= -3.5) & (a <= 3.5)]
+    a = 2**a - 1
+    ind = sorted(np.random.choice(list(range(0,n2)), n2 // 2))
+    a[ind] = a[ind]**(-1)
+    a = a[abs(np.log2(a)) <= 3.5]
+    return np.random.choice(a, n)
 
 def normnoise(n=1, v=0.025, seed=0):
     np.random.seed(seed)
