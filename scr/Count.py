@@ -315,7 +315,8 @@ class OAR_counter:
     def cloneCount_adjust(self, input_list, output_dir, chains, v_only, verbosity):
         """
         V_dict(_a), J_dict(_a) - dictionaries of OAR, containing meta info, for current iteration
-        self.V_dict_meta, self.J_dict_meta - dictionaries for all iterations with meta info. "OAR_log" - logged, "OAR" - final
+        self.V_dict_meta, self.J_dict_meta - dictionaries for all iterations with meta info. "OAR_log" - logged, \
+        OAR_begin/end - OAR values for each tables before and after the final recalculations, "OAR" - final
         "simple dictionary" - dictionary, used for clone_recount. Format: {<gene_name, str>: <OAR, float>}
         """
         
@@ -337,13 +338,15 @@ class OAR_counter:
             self.genes_j = sum(self.genes_dict_j.values(), [])
         
         self.V_dict_meta = {k: {"chain": None, "reads": [], "clones": [], 
-                                "OAR_log": [], "out-of-frame": None,
-                                "sample": None} for k in self.genes_v}
+                                "OAR_log": [], "OAR_begin": [], "OAR_end": [],
+                                "out-of-frame": None, "sample": None} for k in self.genes_v}
         self.J_dict_meta = {k: {"chain": None, "reads": [], "clones": [], 
-                                "OAR_log": [], "out-of-frame": None,
-                                "sample": None} for k in self.genes_j}
+                                "OAR_log": [], "OAR_begin": [], "OAR_end": [],
+                                "out-of-frame": None, "sample": None} for k in self.genes_j}
+        # Statistics abount count / clones for all out-of-frames in each sample
+        self.oof_stat = {c: [] for c in chains}
         
-        for file, processed_file, filtered_file in zip(input_list, input_list_processed, input_list_filtered):
+        for x, (file, processed_file, filtered_file) in enumerate(zip(input_list, input_list_processed, input_list_filtered)):
             df = pd.read_csv(file, delimiter="\t")
             df["chain"] = get_chain(df)
             df = df[df['chain'].isin(self.chains)]
@@ -353,25 +356,33 @@ class OAR_counter:
                 pickle.dump(df, f)
                 
             df_f = self.collision_filter.filter_subclones(df) if self.prefilt else df
+
+            if verbosity:
+                print(f'Calculating primary reads/clones statistics for {os.path.basename(file)}')
+
+            #get clone statistics for initial clone counts
+            for group in gene_names.filter_outframes(df_f, outframes=True).groupby("chain"):
+                self.oof_stat[group[0]].append(group[1][f'count'].sum() / len(group[1]))
+
             df_f = self.filter_outliers(df_f) if self.no_outliers else df_f
             with open(filtered_file, 'wb') as f:
                 pickle.dump(df_f, f)
             
-            #get clone statistics for initial clone counts
             V_dict, J_dict = self._cloneCount_adjust_pair(filtered_file, bsc, recalc=False, verbosity=verbosity)
-            
-            if verbosity:
-                print(f'Calculating primary reads/clones statistics for {os.path.basename(file)}')
-
+           
             for k, v in self.V_dict_meta.items():
                 v["chain"] = V_dict[k]["chain"]
+                v["sample"] = V_dict[k]["sample"]
                 v["reads"].append(V_dict[k]["reads"])
                 v["clones"].append(V_dict[k]["clones"])
+                v["OAR_begin"].append(V_dict[k]["OAR"])
                           
             for k, v in self.J_dict_meta.items():
                 v["chain"] = J_dict[k]["chain"]
+                v["sample"] = J_dict[k]["sample"]
                 v["reads"].append(J_dict[k]["reads"])
                 v["clones"].append(J_dict[k]["clones"])
+                v["OAR_begin"].append(J_dict[k]["OAR"])
         
         i_iter = 0 if self.own_table else 1
         error = 0              
@@ -379,7 +390,7 @@ class OAR_counter:
         while (i_iter <= 1) or (i_iter <= self.n_iter) and (error > self.err):
             """
             Iteration 1: recalculate using input libraries and save adjusted tables to temporary files           
-            Of note: all files must have suffix "V_OAR_stat" or "J_OAR_stat!!"   
+            Of note: all files must have suffix "V_OAR_stat" or "J_OAR_stat!!"  
             """
             if (i_iter == 1 and not self.own_table) or (i_iter == 0 and self.own_table):
                 if not self.own_table:
@@ -482,6 +493,17 @@ class OAR_counter:
             i_iter += 1
             if verbosity:
                 print(verb_mess)
+        else:
+            # Count OAR of the recalculated tables, used for the report only
+            print("Calculate the final OAR values")
+            for tmp_file, tmp_V_dict_file, tmp_J_dict_file in zip(tmp_df_files, tmp_V_dict_files, tmp_J_dict_files):
+                V_dict, J_dict = self._cloneCount_adjust_pair(tmp_file, bsc, recalc=True, verbosity=verbosity)
+                for k, v in self.V_dict_meta.items():
+                    v["OAR_end"].append(V_dict[k]["OAR"])
+                              
+                for k, v in self.J_dict_meta.items():
+                    v["OAR_end"].append(J_dict[k]["OAR"])
+
                     
                     
         #remove created temp files
@@ -614,6 +636,7 @@ def to_vdjtools_format(df):
     
 def json_df_converter(json_data):
     genes, chain, reads, clones, oar, sample = [], [], [], [], [], []
+    oar_begin, oar_end = [], []
     for k, v in json_data.items():
         genes.append(k)
         chain.append(v["chain"])
@@ -621,11 +644,15 @@ def json_df_converter(json_data):
         clones.append(v["clones"])
         oar.append(v["OAR"])
         sample.append(v["sample"])
-    return pd.DataFrame({"genes": genes, "chain": chain, "reads": reads, "clones": clones, "OAR": oar, "sample": sample})
+        oar_begin.append(v["OAR_begin"])
+        oar_end.append(v["OAR_end"])
+    return pd.DataFrame({"genes": genes, "chain": chain, "reads": reads, "clones": clones, 
+                        "OAR_begin": oar_begin, "OAR_end": oar_end, "OAR": oar, "sample": sample})
     
 
-def make_report(args, tables, reports_dir, prefix, region_dict, region, threshold, momentum):
+def make_report(args, tables, reports_dir, prefix, oof_stat, region_dicts, threshold, momentum):
     pd.set_option('display.max_colwidth', -1)
+    regions = ("V", "J") if len(region_dicts) == 2 else ("V",)
     #Info about input arguments
     df_args = pd.DataFrame.from_dict(args.__dict__, orient='index')
     df_args.drop(index=['func'], inplace=True)
@@ -641,52 +668,68 @@ def make_report(args, tables, reports_dir, prefix, region_dict, region, threshol
     df_info.columns=['List of input VDJtools tables']
     report_info = df_info.to_html(justify="center")
     
-    #Standard statistics tables
-    df_stat = json_df_converter(region_dict)
-    df_stat = df_stat.replace(np.nan, '', regex=True)
-    
-    #split "reads" and "clones" columns
-    reads_cols = [f"reads_{i+1}" for i in range(len(tables))]
-    clones_cols = [f"clones_{i+1}" for i in range(len(tables))]
-    df_stat[reads_cols] = pd.DataFrame(df_stat["reads"].tolist(), index=df_stat.index)
-    df_stat[clones_cols] = pd.DataFrame(df_stat["clones"].tolist(), index=df_stat.index)
-    df_stat = df_stat[["genes", "chain"] + reads_cols + clones_cols + ["OAR", "sample"]]
-    df_stat["OAR"] = pd.to_numeric(df_stat["OAR"]).pow(1. / momentum)
-    
-    df_stat.columns=pd.MultiIndex.from_product([[f'General statistics information for {region} region'],df_stat.columns])
-    report_stat = df_stat.to_html(index=False)
-    
-    #filter NaN
-    region_dict = {k:v for k, v in region_dict.items() if ~np.isnan(v["OAR"])}
-    
-    # Report for final value
-    chains = sorted(list(set([v["chain"] for v in region_dict.values()])))
-    
-    std_tot = [std_one(np.array([v["OAR"] for v in region_dict.values() if v['chain'] == chain])) for chain in chains]
-    std_tot = [round(i, 5) for i in std_tot]
-
-    df_std_tot = pd.DataFrame({k:v for k, v in zip(chains, std_tot)}, index=["std"])
-    df_std_tot.columns=pd.MultiIndex.from_product([[f'Standard deviation of final OAR values of {region} region'],df_std_tot.columns])
-    report_std_tot = df_std_tot.to_html(index=False)
-
-    # Report for each iteration
-    iter_std = dict()
-    for chain in chains:
-        iter_std[chain] = []
-        meta_chain = {k: v for k, v in region_dict.items() if v["chain"] == chain}
-        for step in np.array([v["OAR_log"] for v in meta_chain.values()]).T:
-            iter_std[chain].append(std_one(step))
-
-    iter_range = range(1, len(list(iter_std.values())[0]) + 1)
-    df_std_iter = pd.DataFrame(iter_std, index=iter_range)
-    df_std_iter.columns=pd.MultiIndex.from_product([[f'Standard deviation of {region} genes OAR for each iteration'],df_std_iter.columns])
-    report_std_iter = df_std_iter.to_html()
+    # Statistics about out-of-frame reads / clones
+    df_oof = pd.DataFrame.from_dict(oof_stat, orient='index')
+    df_oof.columns = [f'table_{i}' for i in range(1,len(tables) + 1)]
+    df_oof.columns=pd.MultiIndex.from_product([[f'Reads/clones ratio for out-of-frame clones'],df_oof.columns])
+    report_oof =  df_oof.to_html(justify="center")
 
     #merge all previous HTML subreports to one file
-    report_total = "<br><br>".join([report_args, report_info, report_stat, report_std_tot, report_std_iter])
+    report_total = "<br><br>".join([report_args, report_info, report_oof])
+    
+    for region, region_dict in zip(regions, region_dicts):
+        #Standard statistics tables
+        df_stat = json_df_converter(region_dict)
+
+        #split "reads" and "clones" columns
+        df_stat = df_stat.replace(np.nan, '', regex=True)
+        reads_cols = [f"reads_{i+1}" for i in range(len(tables))]
+        clones_cols = [f"clones_{i+1}" for i in range(len(tables))]
+        oar_begin_cols = [f"OAR_begin_{i+1}" for i in range(len(tables))]
+        oar_end_cols = [f"OAR_end_{i+1}" for i in range(len(tables))]
+        df_stat[reads_cols] = pd.DataFrame(df_stat["reads"].tolist(), index=df_stat.index)
+        df_stat[clones_cols] = pd.DataFrame(df_stat["clones"].tolist(), index=df_stat.index)
+
+        df_stat[oar_begin_cols] = pd.DataFrame(df_stat["OAR_begin"].tolist(), index=df_stat.index).pow(1. / momentum)
+        df_stat[oar_end_cols] = pd.DataFrame(df_stat["OAR_end"].tolist(), index=df_stat.index).pow(1. / momentum)
+
+        df_stat = df_stat[["genes", "chain"] + reads_cols + clones_cols + oar_begin_cols + oar_end_cols + ["OAR", "sample"]]
+        df_stat["OAR"] = pd.to_numeric(df_stat["OAR"]).pow(1. / momentum)
+        
+        df_stat.columns=pd.MultiIndex.from_product([[f'General statistics information for {region} region'],df_stat.columns])
+        report_stat = df_stat.to_html(index=False)
+        
+        #filter NaN
+        region_dict = {k:v for k, v in region_dict.items() if ~np.isnan(v["OAR"])}
+        
+        # Report for final value
+        chains = sorted(list(set([v["chain"] for v in region_dict.values()])))
+        
+        std_tot = [std_one(np.array([v["OAR"] for v in region_dict.values() if v['chain'] == chain])) for chain in chains]
+        std_tot = [round(i, 5) for i in std_tot]
+
+        df_std_tot = pd.DataFrame({k:v for k, v in zip(chains, std_tot)}, index=["std"])
+        df_std_tot.columns=pd.MultiIndex.from_product([[f'Standard deviation of final OAR values of {region} region'],df_std_tot.columns])
+        report_std_tot = df_std_tot.to_html(index=False)
+
+        # Report for each iteration
+        iter_std = dict()
+        for chain in chains:
+            iter_std[chain] = []
+            meta_chain = {k: v for k, v in region_dict.items() if v["chain"] == chain}
+            for step in np.array([v["OAR_log"] for v in meta_chain.values()]).T:
+                iter_std[chain].append(std_one(step))
+
+        iter_range = range(1, len(list(iter_std.values())[0]) + 1)
+        df_std_iter = pd.DataFrame(iter_std, index=iter_range)
+        df_std_iter.columns=pd.MultiIndex.from_product([[f'Standard deviation of {region} genes OAR for each iteration'],df_std_iter.columns])
+        report_std_iter = df_std_iter.to_html()
+
+        # Append region-related stats to the report
+        report_total += "<br><br>" +"<br><br>".join([report_stat, report_std_tot, report_std_iter])
     
     #write report to file
-    with open(f'{reports_dir}/report_{prefix}_{region}.html', "w") as f:
+    with open(f'{reports_dir}/report_{prefix}.html', "w") as f:
         f.write(report_total)
         
     
@@ -819,9 +862,8 @@ def main(**kwargs):
         reports_dir = output_dir + "/" + "iROAR_reports"
         if not os.path.exists(reports_dir):
             os.makedirs(reports_dir)
-        make_report(args, vdjtools_tables, reports_dir, prefix, recounter.V_dict_meta, "V", args.err, momentum)
-        if not v_only:
-            make_report(args, vdjtools_tables, reports_dir, prefix, recounter.J_dict_meta, "J", args.err, momentum)
+        region_dicts = (recounter.V_dict_meta, recounter.J_dict_meta) if not v_only else (recounter.V_dict_meta,)
+        make_report(args, vdjtools_tables, reports_dir, prefix, recounter.oof_stat, region_dicts, args.err, momentum)
     if args.writejson: #
         write_stat_jsons(output_dir + "/" + prefix, recounter.V_dict_meta, "V")
         if not v_only:
