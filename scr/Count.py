@@ -83,13 +83,14 @@ class OAR_counter:
         df_new["masked"] = False
 
         for _ in range(self.n_outliers):
-            df_new["masked"] |= df_new.groupby(['v'])['count'].transform(max) == df_new['count']
-            df_new["masked"] |= df_new.groupby(['j'])['count'].transform(max) == df_new['count']
-            df_new = df_new.loc[~df_new["masked"] | df_new["small"]].reset_index()
+            df_new_big = df_new.loc[~df_new["small"]]
+            df_new["masked"] |= df_new_big.groupby(['v'])['count'].transform(max) == df_new_big['count']
+            df_new["masked"] |= df_new_big.groupby(['j'])['count'].transform(max) == df_new_big['count']
+            df_new = df_new.loc[~df_new["masked"]].reset_index()
             df_new.drop(columns=["index"], inplace=True)
         df_bad = df[~df["level_0"].isin(df_new["level_0"])]
-        df_new.drop(columns=["level_0", "masked"], inplace=True)
-        df_bad.drop(columns=["level_0"], inplace=True)
+        df_new.drop(columns=["level_0", "masked", "small"], inplace=True)
+        df_bad.drop(columns=["level_0", "small"], inplace=True)
 
         #warning in case there are unique V/J genes in outlier clones that don't meet in normal ones
         all_bad = list(df_bad["v"].unique()) + list(df_bad["j"].unique())
