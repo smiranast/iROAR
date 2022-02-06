@@ -36,11 +36,14 @@ class Bad_segment_counter:
         
 class OAR_counter:
     
-    def __init__(self, iroar_path, outframe, own_table, no_outliers, oar_lib_v, oar_lib_j, n_iter, err, filter_few, upper_only, min_oof_clones, short, prefilt, collision_filter, momentum):
+    def __init__(self, iroar_path, outframe, own_table, n_outliers, outliers_depth,
+                 oar_lib_v, oar_lib_j, n_iter, err, filter_few, upper_only, min_oof_clones,
+                    short, prefilt, collision_filter, momentum):
         
         self.outframe = outframe
         self.own_table = own_table
-        self.no_outliers = no_outliers
+        self.n_outliers = min(n_outliers, outliers_depth)
+        self.outliers_depth = outliers_depth
         self.oar_lib_v = oar_lib_v
         self.oar_lib_j = oar_lib_j
         self.err = err
@@ -66,16 +69,46 @@ class OAR_counter:
         df.loc[mask, "v"] = df[mask].apply(lambda x: "/".join([i + "-" + x["j"][2] for i in x["v"].split("/")]), axis=1)
         return df
 
+    #filter outliers by count in each chain using z-score
+    def filter_outliers(self, df):
+        """
+        Delete clones in top-N for each gene
+        """
+        df.index.name = "level_0"
+        df.reset_index(level=0, inplace=True)
+        df["small"] = df.groupby("v")["v"].transform("count").le(self.outliers_depth)
+        df["small"] |= df.groupby("j")["j"].transform("count").le(self.outliers_depth)
 
+        df_new = df.copy()
+        df_new["masked"] = False
+
+        for _ in range(self.n_outliers):
+            df_new["masked"] |= df_new.groupby(['v'])['count'].transform(max) == df_new['count']
+            df_new["masked"] |= df_new.groupby(['j'])['count'].transform(max) == df_new['count']
+            df_new = df_new.loc[~df_new["masked"] | df_new["small"]].reset_index()
+            df_new.drop(columns=["index"], inplace=True)
+        df_bad = df[~df["level_0"].isin(df_new["level_0"])]
+        df_new.drop(columns=["level_0", "masked"], inplace=True)
+        df_bad.drop(columns=["level_0"], inplace=True)
+
+        #warning in case there are unique V/J genes in outlier clones that don't meet in normal ones
+        all_bad = list(df_bad["v"].unique()) + list(df_bad["j"].unique())
+        all_new = list(df_new["v"].unique()) + list(df_new["j"].unique())
+        uniq_bad = [i for i in set(all_bad) if i not in set(all_new)]
+
+        if uniq_bad:
+            print("WARNING! Following genes meet only in outlier clones: {}".format(", ".join([str(i) for i in uniq_bad])), file = sys.stderr)   
+        return df_new
+
+
+    """
     #filter outliers by count in each chain using z-score
     def filter_outliers(self, df):
         df_new = pd.DataFrame()
-        """
-        Save only clones which:
-        (EITHER zscore is less than 3 -> only upper border cause we need to filter out supposed tumor clones
-        OR has zscore = NaN -> only one clone within chain)
-        AND has more than 10 reads -> zscore test works incorrectly with small ranges
-        """
+        #Save only clones which:
+        #(EITHER zscore is less than 3 -> only upper border cause we need to filter out supposed tumor clones
+        #OR has zscore = NaN -> only one clone within chain)
+        #AND has more than 10 reads -> zscore test works incorrectly with small ranges
         mask_zscore = (df["count"] - df["count"].mean())/df["count"].std()
         mask_zscore = mask_zscore.fillna(0)
         mask_threshold = df["count"] < 10
@@ -88,7 +121,7 @@ class OAR_counter:
         if uniq_bad:
             print("WARNING! Following genes meet only in outlier clones: {}".format(" ,".join([str(i) for i in uniq_bad])), file = sys.stderr)   
         return df_new
-    
+    """
     
     """
     #previous function, which calculates for each chain separately
@@ -364,7 +397,7 @@ class OAR_counter:
             for group in gene_names.filter_outframes(df_f, outframes=True).groupby("chain"):
                 self.oof_stat[group[0]].append(group[1][f'count'].sum() / len(group[1]))
 
-            df_f = self.filter_outliers(df_f) if self.no_outliers else df_f
+            df_f = self.filter_outliers(df_f) if self.n_outliers else df_f
             with open(filtered_file, 'wb') as f:
                 pickle.dump(df_f, f)
             
@@ -749,7 +782,8 @@ def main(**kwargs):
         parser.add_argument("output",  help = "Output directory path", type=str, metavar='<output>')
         parser.add_argument("--long", help = "Do not overwrite standard VDJtools columns instead of adding new ones\n(default=False)", action='store_false')
         parser.add_argument("-c", "--chains", help = "List of chains to analyse, sepatated by comma", type=str, metavar='<chain1>,<chain2>...<chainN>', default="IGH,IGK,IGL,TRA,TRB,TRD,TRG")
-        parser.add_argument("-z", "--outliers", help = "Calculate OAR on data after filtering outliers with Z-test\n(if owntable = True; default=False)", action='store_true')
+        parser.add_argument("-z", "--outliers", help = "Do not include top-N clones for each gene in OAR calculation\n(default=1)", metavar='<int>', type=int, default=1)
+        parser.add_argument("-zd", "--outliers_depth", help = "Minilal number of clones for each gene, where outliers filtration is applied\n(default=10)", metavar='<int>', type=int, default=10)
         parser.add_argument("-f" ,"--all_frame", help = "Calculate OAR using all clones, not only out-of-frame", action='store_true')
         parser.add_argument("-min_outframe", help = "Minimal out-of-frame clones threshold for OAR calculation.\nIf a segment is present within less clones than the specified value\nOAR is equal to 1(if outframe = True)", default=0, type=int, metavar='<int>')
         parser.add_argument("-filter_few", help = "Don't show clones with counts less than N before ceiling (default=show all)", default=0, type=float, metavar='<float>')
@@ -842,7 +876,8 @@ def main(**kwargs):
     recounter = OAR_counter(iroar_path=iroar_path,
                             outframe=outframe,
                             own_table=owntable,
-                            no_outliers=args.outliers,
+                            n_outliers=args.outliers,
+                            outliers_depth=args.outliers_depth,
                             oar_lib_v=oar_lib_v,
                             oar_lib_j=oar_lib_j,
                             n_iter=args.iter,
