@@ -726,9 +726,10 @@ def make_report(args, tables, reports_dir, prefix, oof_stat, region_dicts, thres
 
         df_stat[oar_begin_cols] = pd.DataFrame(df_stat["OAR_begin"].tolist(), index=df_stat.index).pow(1. / momentum)
         df_stat[oar_end_cols] = pd.DataFrame(df_stat["OAR_end"].tolist(), index=df_stat.index).pow(1. / momentum)
-
-        df_stat = df_stat[["genes", "chain"] + reads_cols + clones_cols + oar_begin_cols + oar_end_cols + ["OAR", "sample"]]
+        df_stat["OAR norm"] = np.nan
+        df_stat = df_stat[["genes", "chain"] + reads_cols + clones_cols + oar_begin_cols + oar_end_cols + ["OAR", "OAR norm", "sample"]]
         df_stat["OAR"] = pd.to_numeric(df_stat["OAR"]).pow(1. / momentum)
+        df_stat["OAR norm"] = df_stat["OAR"] / df_stat["OAR"].mean()
         
         df_stat.columns=pd.MultiIndex.from_product([[f'General statistics information for {region} region'],df_stat.columns])
         report_stat = df_stat.to_html(index=False)
