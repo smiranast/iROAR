@@ -70,7 +70,7 @@ class OAR_counter:
         return df
 
     #filter outliers by count in each chain using z-score
-    def filter_outliers(self, df):
+    def filter_outliers(self, df, verbosity=False):
         """
         Delete clones in top-N for each gene
         """
@@ -97,7 +97,7 @@ class OAR_counter:
         all_new = list(df_new["v"].unique()) + list(df_new["j"].unique())
         uniq_bad = [i for i in set(all_bad) if i not in set(all_new)]
 
-        if uniq_bad:
+        if uniq_bad and verbosity:
             print("WARNING! Following genes meet only in outlier clones: {}".format(", ".join([str(i) for i in uniq_bad])), file = sys.stderr)   
         return df_new
 
@@ -170,7 +170,7 @@ class OAR_counter:
                 #use pseudocounts to get rid from freq = 0
                 #despite situations when there is no clones for the chain
                 for gene in gene_dict[chain]:
-                    freq_clones[gene] = df.loc[df[gene_type.lower()].str.contains(gene), ["count", gene_type.lower()]].shape[0]
+                    freq_clones[gene] = df.loc[df[gene_type.lower()] == gene, ["count", gene_type.lower()]].shape[0]
                     freq_clones[gene] += 1
                     freq_clones[gene] /= total_clones_chain
                     popul_data = freq_clones_precalc_raw.get(gene, None)
@@ -193,7 +193,7 @@ class OAR_counter:
                        ["IGH", "IGK", "IGL", "TRA", "TRB", "TRD", "TRG"]}
 
         for gene in gene_list:
-            df_gene = df.loc[df[gene_type.lower()].str.contains(gene), ["count", gene_type.lower()]]
+            df_gene = df.loc[df[gene_type.lower()] == gene, ["count", gene_type.lower()]]
             X = freq_clones[gene]
             if df_gene.empty:
                 reads, clones = 0, 0
@@ -398,7 +398,7 @@ class OAR_counter:
             for group in gene_names.filter_outframes(df_f, outframes=True).groupby("chain"):
                 self.oof_stat[group[0]].append(group[1][f'count'].sum() / len(group[1]))
 
-            df_f = self.filter_outliers(df_f) if self.n_outliers else df_f
+            df_f = self.filter_outliers(df_f, verbosity) if self.n_outliers else df_f
             with open(filtered_file, 'wb') as f:
                 pickle.dump(df_f, f)
             
@@ -427,6 +427,7 @@ class OAR_counter:
             Of note: all files must have suffix "V_OAR_stat" or "J_OAR_stat!!"  
             """
             if (i_iter == 1 and not self.own_table) or (i_iter == 0 and self.own_table):
+                
                 if not self.own_table:
                     if self.v_only:
                         mean_oar = mean_oar_counter(search_dir=None,
@@ -447,17 +448,21 @@ class OAR_counter:
                     mean_v = {k: ({"OAR": 1., "out-of-frame": 0} if (self.upper_only and v < 1) or
                                   np.isnan(v["OAR"]) else v)
                                   for k,v in mean_v.items() if k in self.genes_v}
-                    
+
                     for k, v in mean_v.items():
                         self.V_dict_meta[k]["OAR_log"] = [v["OAR"]]
+                        self.V_dict_meta[k]["out-of-frame"] = v["out-of-frame"]
+                        self.V_dict_meta[k]["sample"] = "out-of-frame" if v["out-of-frame"] and v["OAR"] else "all"
                         
                     for k, v in mean_j.items():
                         self.J_dict_meta[k]["OAR_log"] = [v["OAR"]]
-                    
+                        self.J_dict_meta[k]["out-of-frame"] = v["out-of-frame"]
+                        self.J_dict_meta[k]["sample"] = "out-of-frame" if v["out-of-frame"] and v["OAR"] else "all"
+                    print(self.V_dict_meta)
                 else:
-                    mean_v = {k:{"OAR": 1., "out-of-frame": 0} for k in self.genes_v}
-                    mean_j = {k:{"OAR": 1., "out-of-frame": 0} for k in self.genes_j}
-                    
+                    mean_v = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_v}
+                    mean_j = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_j}
+   
                 tmp_df_files, tmp_V_dict_files, tmp_J_dict_files = [], [], []
                     
                 for i, (oar_lib_v, oar_lib_j) in enumerate(zip(self.oar_lib_v, self.oar_lib_j)):
@@ -481,8 +486,8 @@ class OAR_counter:
                             with open(oar_lib_v) as f1, open(oar_lib_j) as f2:
                                 V_dict, J_dict = json.load(f1), json.load(f2)
                         else:
-                            V_dict = {k:{"OAR": 1., "out-of-frame": 0} for k in self.genes_v}
-                            J_dict = {k:{"OAR": 1., "out-of-frame": 0} for k in self.genes_j}
+                            V_dict = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_v}
+                            J_dict = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_j}
 
                         with open(filtered_file, 'rb') as f:
                             df_f = pickle.load(f)
@@ -508,14 +513,14 @@ class OAR_counter:
                 
                 for k, v in self.V_dict_meta.items():
                     if i_iter == 2:
-                        v["out-of-frame"] = V_dict[k]["out-of-frame"]
-                        v["sample"] = V_dict[k]["sample"]
+                        v["out-of-frame"] = mean_v[k]["out-of-frame"]
+                        v["sample"] = "out-of-frame" if mean_v[k]["out-of-frame"] and mean_v[k]["OAR"] else "all"
                     v["OAR_log"].append(mean_v[k]["OAR"])
 
                 for k, v in self.J_dict_meta.items():
                     if i_iter == 2:
-                        v["out-of-frame"] = J_dict[k]["out-of-frame"]
-                        v["sample"] = J_dict[k]["sample"]
+                        v["out-of-frame"] = mean_j[k]["out-of-frame"]
+                        v["sample"] = "out-of-frame" if mean_j[k]["out-of-frame"] and mean_j[k]["OAR"] else "all"
                     v["OAR_log"].append(mean_j[k]["OAR"])   
                 
             if self.own_table and i_iter == 0:
