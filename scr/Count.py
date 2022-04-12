@@ -171,7 +171,7 @@ class OAR_counter:
                 #despite situations when there is no clones for the chain
                 for gene in gene_dict[chain]:
                     freq_clones[gene] = df.loc[df[gene_type.lower()] == gene, ["count", gene_type.lower()]].shape[0]
-                    freq_clones[gene] += 1
+                    #freq_clones[gene] += 1e-6
                     freq_clones[gene] /= total_clones_chain
                     popul_data = freq_clones_precalc_raw.get(gene, None)
                     if popul_data: #if population frequence for this gene calculated
