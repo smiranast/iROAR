@@ -11,7 +11,7 @@ import string
 import pickle
 import numpy as np
 import pandas as pd
-from math import ceil, isnan
+from math import ceil, isnan, isinf
 from datetime import datetime
 from scr.modules import *
 from scr.Merge import mean_oar_counter
@@ -248,7 +248,7 @@ class OAR_counter:
             self.freq_clones_v, freq_clones_precalc_v, if_good_v = self._check_clones(df, self.genes_dict_v, "V")
             self.freq_clones_j, freq_clones_precalc_j, if_good_j = self._check_clones(df, self.genes_dict_j, "J")
 
-            if (not if_good_v or not if_good_j) and self.clonal_freq_warning:
+            if (not if_good_v or not if_good_j) and self.clonal_freq_warning and self.n_iter != 0:
                 print("Clonal frequencies of the input data differs sufficiently to populational!")
                 yn = input("Use populational frequencies instead? yes/no\n").lower().strip("\n")
                 while not (yn == "yes" or yn == "y" or yn == "no" or yn == "n"):
@@ -418,120 +418,118 @@ class OAR_counter:
                 v["clones"].append(J_dict[k]["clones"])
                 v["OAR_begin"].append(J_dict[k]["OAR"])
         
-        i_iter = 0 if self.own_table else 1
-        error = 0              
-        
-        while (i_iter <= 1) or (i_iter <= self.n_iter) and (error > self.err):
-            """
-            Iteration 1: recalculate using input libraries and save adjusted tables to temporary files           
-            Of note: all files must have suffix "V_OAR_stat" or "J_OAR_stat!!"  
-            """
-            if (i_iter == 1 and not self.own_table) or (i_iter == 0 and self.own_table):
-                
-                if not self.own_table:
-                    if self.v_only:
-                        mean_oar = mean_oar_counter(search_dir=None,
-                                                    file_list=self.oar_lib_v,
-                                                    min_outframe=self.min_oof_clones)
-                        mean_j = {k:{"OAR": 1., "out-of-frame": 0} for k in self.genes_j}
-                        self.oar_lib_j = [None for _ in range(len(self.oar_lib_v))]
-                    else:
-                        mean_oar = mean_oar_counter(search_dir=None,
-                                                    file_list=self.oar_lib_v + self.oar_lib_j,
-                                                    min_outframe=self.min_oof_clones)
-                        mean_j = mean_oar.count_mean("J")
-                        mean_j = {k: ({"OAR": 1., "out-of-frame": 0} if (self.upper_only and v < 1) or
-                                      np.isnan(v["OAR"]) else v)
-                                      for k,v in mean_j.items() if k in self.genes_j}
+           
+        """
+        1) To calculate using pre-loaded libs only, number of iterations = 0
+        2) n_iter - how many calculation iterations using the repertoire stats
+        3) own_table == True, if no pre-loaded libs
+        """
 
-                    mean_v = mean_oar.count_mean("V")
-                    mean_v = {k: ({"OAR": 1., "out-of-frame": 0} if (self.upper_only and v < 1) or
-                                  np.isnan(v["OAR"]) else v)
-                                  for k,v in mean_v.items() if k in self.genes_v}
-
-                    for k, v in mean_v.items():
-                        self.V_dict_meta[k]["OAR_log"] = [v["OAR"]]
-                        self.V_dict_meta[k]["out-of-frame"] = v["out-of-frame"]
-                        self.V_dict_meta[k]["sample"] = "out-of-frame" if v["out-of-frame"] and v["OAR"] else "all"
-                        
-                    for k, v in mean_j.items():
-                        self.J_dict_meta[k]["OAR_log"] = [v["OAR"]]
-                        self.J_dict_meta[k]["out-of-frame"] = v["out-of-frame"]
-                        self.J_dict_meta[k]["sample"] = "out-of-frame" if v["out-of-frame"] and v["OAR"] else "all"
-                    print(self.V_dict_meta)
-                else:
-                    mean_v = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_v}
-                    mean_j = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_j}
-   
-                tmp_df_files, tmp_V_dict_files, tmp_J_dict_files = [], [], []
-                    
-                for i, (oar_lib_v, oar_lib_j) in enumerate(zip(self.oar_lib_v, self.oar_lib_j)):
-                    if self.v_only and verbosity and not self.own_table:
-                        print(f"Loading library {oar_lib_v}")
-                    elif verbosity and not self.own_table:
-                        print(f"Loading libraries {oar_lib_v} and {oar_lib_j}")
-                            
-                    for filtered_file in input_list_filtered:
-                        #Create temp binary file for each pair of libraries
-                        tmp_file = tmp_dir + "/" + ''.join([random.choice(string.ascii_lowercase) for _ in range(10)]) + str(i)
-                        tmp_df_files.append(tmp_file)
-                        tmp_V_dict_files.append(tmp_file + ".V_OAR_stat.json")
-                        tmp_J_dict_files.append(tmp_file + ".J_OAR_stat.json")
-
-                        if self.v_only and not self.own_table:
-                            with open(oar_lib_v) as f1:
-                                V_dict = json.load(f1)
-                                J_dict = {k:1. for k in j_list}
-                        elif not self.own_table:
-                            with open(oar_lib_v) as f1, open(oar_lib_j) as f2:
-                                V_dict, J_dict = json.load(f1), json.load(f2)
-                        else:
-                            V_dict = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_v}
-                            J_dict = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_j}
-
-                        with open(filtered_file, 'rb') as f:
-                            df_f = pickle.load(f)
-                            
-                        df_f["count"] = df_f.apply(self.clone_recount, args=(V_dict, J_dict, bsc, verbosity), axis=1)
-
-                        with open(tmp_file, 'wb') as f:
-                            pickle.dump(df_f, f)
-                
-            if (i_iter != 1 and not self.own_table) or (i_iter != 0 and self.own_table):
-                for tmp_file, tmp_V_dict_file, tmp_J_dict_file in zip(tmp_df_files, tmp_V_dict_files, tmp_J_dict_files):
-                    V_dict, J_dict = self._cloneCount_adjust_pair(tmp_file, bsc, recalc=True, verbosity=verbosity)
-
-                    with open(tmp_V_dict_file, 'w') as f1, open(tmp_J_dict_file, 'w') as f2:
-                        json.dump(simple_dict(V_dict), f1)
-                        json.dump(simple_dict(J_dict), f2)
-                                
+        if not self.own_table: # If prelimenary calculated OAR_stats are used
+            if self.v_only:
                 mean_oar = mean_oar_counter(search_dir=None,
-                                            file_list=tmp_V_dict_files + tmp_J_dict_files,
-                                            min_outframe=0)
-                mean_v = mean_oar.count_mean("V")                    
+                                            file_list=self.oar_lib_v,
+                                            min_outframe=self.min_oof_clones)
+                mean_j = {k:{"OAR": 1., "out-of-frame": 0} for k in self.genes_j}
+                self.oar_lib_j = [None for _ in range(len(self.oar_lib_v))]
+            else:
+                mean_oar = mean_oar_counter(search_dir=None,
+                                            file_list=self.oar_lib_v + self.oar_lib_j,
+                                            min_outframe=self.min_oof_clones)
                 mean_j = mean_oar.count_mean("J")
-                
-                for k, v in self.V_dict_meta.items():
-                    if i_iter == 2:
-                        v["out-of-frame"] = mean_v[k]["out-of-frame"]
-                        v["sample"] = "out-of-frame" if mean_v[k]["out-of-frame"] and mean_v[k]["OAR"] else "all"
-                    v["OAR_log"].append(mean_v[k]["OAR"])
+                mean_j = {k: ({"OAR": 1., "out-of-frame": 0} if (self.upper_only and v < 1) or
+                              np.isnan(v["OAR"]) else v)
+                              for k,v in mean_j.items() if k in self.genes_j}
 
-                for k, v in self.J_dict_meta.items():
-                    if i_iter == 2:
-                        v["out-of-frame"] = mean_j[k]["out-of-frame"]
-                        v["sample"] = "out-of-frame" if mean_j[k]["out-of-frame"] and mean_j[k]["OAR"] else "all"
-                    v["OAR_log"].append(mean_j[k]["OAR"])   
+            mean_v = mean_oar.count_mean("V")
+            mean_v = {k: ({"OAR": 1., "out-of-frame": 0} if (self.upper_only and v < 1) or
+                          np.isnan(v["OAR"]) else v)
+                          for k,v in mean_v.items() if k in self.genes_v}
+
+            for k, v in mean_v.items():
+                self.V_dict_meta[k]["OAR_log"] = [v["OAR"]]
+                self.V_dict_meta[k]["out-of-frame"] = v["out-of-frame"]
+                self.V_dict_meta[k]["sample"] = "out-of-frame" if v["out-of-frame"] and v["OAR"] else "all"
                 
-            if self.own_table and i_iter == 0:
-                i_iter += 1
-                continue
-                
+            for k, v in mean_j.items():
+                self.J_dict_meta[k]["OAR_log"] = [v["OAR"]]
+                self.J_dict_meta[k]["out-of-frame"] = v["out-of-frame"]
+                self.J_dict_meta[k]["sample"] = "out-of-frame" if v["out-of-frame"] and v["OAR"] else "all"
+
+        if self.own_table: # Make pseudo-libs
+            mean_v = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_v}
+            mean_j = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_j}
+
+
+        # Recalculate with loaded or pseudo-libs
+        tmp_df_files, tmp_V_dict_files, tmp_J_dict_files = [], [], []
+                    
+        for i, (oar_lib_v, oar_lib_j) in enumerate(zip(self.oar_lib_v, self.oar_lib_j)):
+            if self.v_only and verbosity and not self.own_table:
+                print(f"Loading library {oar_lib_v}")
+            elif verbosity and not self.own_table:
+                print(f"Loading libraries {oar_lib_v} and {oar_lib_j}")
+                    
+            for filtered_file in input_list_filtered:
+                #Create temp binary file for each pair of libraries
+                tmp_file = tmp_dir + "/" + ''.join([random.choice(string.ascii_lowercase) for _ in range(10)]) + str(i)
+                tmp_df_files.append(tmp_file)
+                tmp_V_dict_files.append(tmp_file + ".V_OAR_stat.json")
+                tmp_J_dict_files.append(tmp_file + ".J_OAR_stat.json")
+
+                if self.v_only and not self.own_table:
+                    with open(oar_lib_v) as f1:
+                        V_dict = json.load(f1)
+                        J_dict = {k:1. for k in j_list}
+                elif not self.own_table:
+                    with open(oar_lib_v) as f1, open(oar_lib_j) as f2:
+                        V_dict, J_dict = json.load(f1), json.load(f2)
+                else:
+                    V_dict = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_v}
+                    J_dict = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_j}
+
+                with open(filtered_file, 'rb') as f:
+                    df_f = pickle.load(f)
+                    
+                df_f["count"] = df_f.apply(self.clone_recount, args=(V_dict, J_dict, bsc, verbosity), axis=1)
+
+                with open(tmp_file, 'wb') as f:
+                    pickle.dump(df_f, f)
+
+        i_iter, error = 1, np.inf
+
+        while (i_iter <= self.n_iter) and (error > self.err): # Now run the iteration
+            for tmp_file, tmp_V_dict_file, tmp_J_dict_file in zip(tmp_df_files, tmp_V_dict_files, tmp_J_dict_files):
+                V_dict, J_dict = self._cloneCount_adjust_pair(tmp_file, bsc, recalc=True, verbosity=verbosity)
+
+                with open(tmp_V_dict_file, 'w') as f1, open(tmp_J_dict_file, 'w') as f2:
+                    json.dump(simple_dict(V_dict), f1)
+                    json.dump(simple_dict(J_dict), f2)
+                            
+            mean_oar = mean_oar_counter(search_dir=None,
+                                        file_list=tmp_V_dict_files + tmp_J_dict_files,
+                                        min_outframe=0)
+            mean_v = mean_oar.count_mean("V")                    
+            mean_j = mean_oar.count_mean("J")
+            
+            for k, v in self.V_dict_meta.items():
+                if i_iter == 1:
+                    v["out-of-frame"] = mean_v[k]["out-of-frame"]
+                    v["sample"] = "out-of-frame" if mean_v[k]["out-of-frame"] and mean_v[k]["OAR"] else "all"
+                v["OAR_log"].append(mean_v[k]["OAR"])
+
+            for k, v in self.J_dict_meta.items():
+                if i_iter == 1:
+                    v["out-of-frame"] = mean_j[k]["out-of-frame"]
+                    v["sample"] = "out-of-frame" if mean_j[k]["out-of-frame"] and mean_j[k]["OAR"] else "all"
+                v["OAR_log"].append(mean_j[k]["OAR"])   
+
             error, verb_mess = self._calc_iter_error(mean_v, mean_j, i_iter)
             
             i_iter += 1
             if verbosity:
                 print(verb_mess)
+
         else:
             # Count OAR of the recalculated tables, used for the report only
             print("Calculate the final OAR values")
@@ -543,7 +541,6 @@ class OAR_counter:
                 for k, v in self.J_dict_meta.items():
                     v["OAR_end"].append(J_dict[k]["OAR"])
 
-                    
                     
         #remove created temp files
         for file in input_list_filtered + tmp_df_files + tmp_V_dict_files + tmp_J_dict_files:
@@ -732,10 +729,10 @@ def make_report(args, tables, reports_dir, prefix, oof_stat, region_dicts, thres
         df_stat[oar_begin_cols] = pd.DataFrame(df_stat["OAR_begin"].tolist(), index=df_stat.index).pow(1. / momentum)
         df_stat[oar_end_cols] = pd.DataFrame(df_stat["OAR_end"].tolist(), index=df_stat.index).pow(1. / momentum)
         df_stat["OAR norm"] = np.nan
-        df_stat = df_stat[["genes", "chain"] + reads_cols + clones_cols + oar_begin_cols + oar_end_cols + ["OAR", "OAR norm", "sample"]]
+        df_stat = df_stat[["genes", "chain"] + reads_cols + clones_cols + oar_begin_cols + oar_end_cols + ["OAR", "OAR norm", "sample"]]  
         df_stat["OAR"] = pd.to_numeric(df_stat["OAR"]).pow(1. / momentum)
-        df_stat["OAR norm"] = df_stat["OAR"] / df_stat["OAR"].mean()
-        
+        df_stat.loc[df_stat[reads_cols+clones_cols].isin([0]).all(axis=1), "OAR"] = np.nan # Do not show OAR for genes absent in the repertoires
+        df_stat["OAR norm"] = df_stat["OAR"] / df_stat["OAR"].mean(skipna=True)
         df_stat.columns=pd.MultiIndex.from_product([[f'General statistics information for {region} region'],df_stat.columns])
         report_stat = df_stat.to_html(index=False)
         
@@ -785,8 +782,8 @@ def main(**kwargs):
     args = kwargs.get('args', None)
     if args is None:
         parser = argparse.ArgumentParser(description='Adjust clonal counts with OAR statistics.', formatter_class=argparse.RawTextHelpFormatter)
-        parser.add_argument("input" , help = "Input directory containing VDJtools tables", type=str, metavar='<input>')
-        parser.add_argument("output",  help = "Output directory path", type=str, metavar='<output>')
+        parser.add_argument("-i", "--input" , help = "Input directory containing VDJtools tables", type=str, metavar='<input>', required=True)
+        parser.add_argument("-o", "--output",  help = "Output directory path", type=str, metavar='<output>', required=True)
         parser.add_argument("--long", help = "Do not overwrite standard VDJtools columns instead of adding new ones\n(default=False)", action='store_false')
         parser.add_argument("-c", "--chains", help = "List of chains to analyse, sepatated by comma", type=str, metavar='<chain1>,<chain2>...<chainN>', default="IGH,IGK,IGL,TRA,TRB,TRD,TRG")
         parser.add_argument("-z", "--outliers", help = "Do not include top-N clones for each gene in OAR calculation\n(default=1)", metavar='<int>', type=int, default=1)
@@ -800,7 +797,9 @@ def main(**kwargs):
         parser.add_argument("--joar", help = "Library of OAR stats for J region in JSON format\nIf multiple V and J libs are used the number of --vlib files\nmust be equal to --jlib files!", type=str, default=[], metavar='<str>', nargs='+')
         parser.add_argument("-r" ,"--report", help = "Create report", action='store_true')
         parser.add_argument("-wj" ,"--writejson", help = "Write OAR statistics in json format (only OAR)", action='store_true')
-        parser.add_argument("-iter", help = "Maximal number of iteration\n(if owntable = True; default=infinite)", type=int, default=np.inf, metavar='<int>')
+        parser.add_argument("-iter", help = """Maximal number of iteration of recalculation basing to the repertoire statistics. 
+Runs infinitely if no OAR_stats.json library is provided.
+Otherwise, only pre-loaded libraries are used for adjustment (iter=0)""", type=int, default=np.inf, metavar='<int>')
         parser.add_argument("-err", help = "Maximal absolute deviation\n(if owntable = True; default=0.1)", type=float, default=0.1, metavar='<float>')
         parser.add_argument("-mt","--momentum", help = "OAR momentum on each step. Possible values: [0.01;1] (default=1.0)", type=float, default=1.0, metavar='<float>')
         parser.add_argument("--filter", help = "Prefilter clonotypes by indels in CDR3 nucleotide sequences\n(similar to stand-alone Filter command, default=False)", action='store_true')
@@ -832,7 +831,8 @@ def main(**kwargs):
     
     #Instead of "-t" key for the program
     owntable = False if oar_lib_v or oar_lib_j else True
-    
+    n_iter = args.iter if owntable or not isinf(args.iter) else 0
+
     if not oar_lib_v and oar_lib_j:
         print('Error! Vlib isn\'t specified', file = sys.stderr)  
         sys.exit(1)  
@@ -887,7 +887,7 @@ def main(**kwargs):
                             outliers_depth=args.outliers_depth,
                             oar_lib_v=oar_lib_v,
                             oar_lib_j=oar_lib_j,
-                            n_iter=args.iter,
+                            n_iter=n_iter,
                             err=args.err,
                             filter_few=args.filter_few,
                             upper_only=args.upper_only,
@@ -901,12 +901,9 @@ def main(**kwargs):
     
     #write statistics files
     if args.report:
-        reports_dir = output_dir + "/" + "iROAR_reports"
-        if not os.path.exists(reports_dir):
-            os.makedirs(reports_dir)
         region_dicts = (recounter.V_dict_meta, recounter.J_dict_meta) if not v_only else (recounter.V_dict_meta,)
-        make_report(args, vdjtools_tables, reports_dir, prefix, recounter.oof_stat, region_dicts, args.err, momentum)
-    if args.writejson: #
+        make_report(args, vdjtools_tables, output_dir, prefix, recounter.oof_stat, region_dicts, args.err, momentum)
+    if args.writejson:
         write_stat_jsons(output_dir + "/" + prefix, recounter.V_dict_meta, "V")
         if not v_only:
             write_stat_jsons(output_dir + "/" + prefix, recounter.J_dict_meta, "J")

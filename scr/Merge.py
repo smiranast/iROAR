@@ -43,18 +43,23 @@ class mean_oar_counter:
         for file in stat_files:
             with open(file) as f:
                 df = json.load(f)
-                df_OAR = {k: (v["OAR"] if v["out-of-frame"] >= self.min_outframe or np.isnan(v["OAR"]) else np.nan)
+
+                df_OAR = {k: (v["OAR"] if ~np.isnan(v["OAR"]) and v["out-of-frame"] >= self.min_outframe else 1)
                       for k,v in df.items()}
                 df_OAR = pd.Series(df_OAR).rename('OAR')
-                df_oof = {k: (v["out-of-frame"] if v["out-of-frame"] >= self.min_outframe or np.isnan(v["OAR"]) else np.nan)
+
+                df_oof = {k: v["out-of-frame"] if ~np.isnan(v["out-of-frame"]) and ~np.isnan(v["OAR"]) else 0
                       for k,v in df.items()}
                 df_oof = pd.Series(df_oof).rename('out-of-frame')
+
             #df = pd.read_json(file, typ='series', dtype=False).rename('OAR')
             df_total = df_total.merge(df_OAR, how='outer', left_index=True, right_index=True)
             df_total = df_total.merge(df_oof, how='outer', left_index=True, right_index=True)
-        df_mean = df_total.filter(regex='^OAR',axis=1).mean(axis=1, numeric_only=True).to_dict()
-        df_min = df_total.filter(regex='^out-of-frame',axis=1).min(axis=1, numeric_only=True).to_dict()
-        return {k: {"OAR": v, "out-of-frame": df_min[k]} for k,v in df_mean.items()}
+        
+        df_OAR = df_total.filter(regex='^OAR',axis=1).mean(axis=1, numeric_only=True).to_dict()
+        df_oof = df_total.filter(regex='^out-of-frame',axis=1).mean(axis=1, numeric_only=True).to_dict()
+
+        return {k: {"OAR": OAR, "out-of-frame": oof} for (k, OAR), oof in zip(df_OAR.items(), df_oof.values())}
 
     
 def write_mean_json(prefix, region, mean_json):

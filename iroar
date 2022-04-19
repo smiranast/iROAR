@@ -13,8 +13,8 @@ def main():
     subparsers = parser.add_subparsers()
 
     count_parser = subparsers.add_parser("Count", help = 'Adjust clonal counts with OAR statistics.', formatter_class=argparse.RawTextHelpFormatter)    
-    count_parser.add_argument("input" , help = "Input directory containing VDJtools tables", type=str, metavar='<input>')
-    count_parser.add_argument("output",  help = "Output directory path", type=str, metavar='<output>')
+    count_parser.add_argument("-i", "--input" , help = "Input directory containing VDJtools tables", type=str, metavar='<input>', required=True)
+    count_parser.add_argument("-o", "--output",  help = "Output directory path", type=str, metavar='<output>', required=True)
     count_parser.add_argument("--long", help = "Do not overwrite standard VDJtools columns instead of adding new ones\n(default=False)", action='store_false')
     count_parser.add_argument("-c", "--chains", help = "List of chains to analyse, sepatated by comma", type=str, metavar='<chain1>,<chain2>...<chainN>', default="IGH,IGK,IGL,TRA,TRB,TRD,TRG")
     count_parser.add_argument("-z", "--outliers", help = "Do not include top-N clones for each gene in OAR calculation\n(default=1)", metavar='<int>', type=int, default=1)
@@ -28,7 +28,9 @@ def main():
     count_parser.add_argument("--joar", help = "Library of OAR stats for J region in JSON format\nIf multiple V and J libs are used the number of --vlib files\nmust be equal to --jlib files!", type=str, default=[], metavar='<str>', nargs='+')
     count_parser.add_argument("-r" ,"--report", help = "Create report", action='store_true')
     count_parser.add_argument("-wj" ,"--writejson", help = "Write OAR statistics in json format (only OAR)", action='store_true')
-    count_parser.add_argument("-iter", help = "Maximal number of iteration\n(if owntable = True; default=infinite)", type=int, default=np.inf, metavar='<int>')
+    count_parser.add_argument("-iter", help = """Maximal number of iteration of recalculation basing to the repertoire statistics. 
+Runs infinitely if no OAR_stats.json library is provided.
+Otherwise, only pre-loaded libraries are used for adjustment (iter=0)""", type=int, default=np.inf, metavar='<int>')
     count_parser.add_argument("-err", help = "Maximal absolute deviation\n(if owntable = True; default=0.1)", type=float, default=0.1, metavar='<float>')
     count_parser.add_argument("-mt", "--momentum", help = "OAR momentum on each step. Possible values: [0.01;1] (default=1.0)", type=float, default=1.0, metavar='<float>')
     count_parser.add_argument("--filter", help = "Prefilter clonotypes by indels in CDR3 nucleotide sequences\n(similar to stand-alone Filter command, default=False)", action='store_true')

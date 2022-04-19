@@ -96,39 +96,39 @@ Besides, the subdirectory <em>biased/</em> contains multiple versions of this re
 one-side multiplex PCR (<em>vmplex_simulated</em>) and two-side multiplex PCR (<em>vjmplex_simulated</em>) 
 1. Fix repertoires with VMPlex libraries, apply only one iteration</b>
 ```shell
-iroar Count -iter 1 example/vmplex_simulated results/
+iroar Count -iter 1 -i example/vmplex_simulated results/
 ```
 
 2. Fix repertoires with VJMPlex libraries, until max absolute deviation of OAR from 1 will reach 0.05, write a report on statistics
 ```shell
-iroar Count -m vjmplex example/vjmplex_simulated results/
+iroar Count -m vjmplex -i example/vjmplex_simulated -o results/
 ```
 
 3. The same as 1), but add recalculated counts as new columns and export OAR statisics to json file
 ```shell
-iroar Count -iter 1 --long -wj example/vmplex_simulated results/
+iroar Count -iter 1 --long -wj -i example/vmplex_simulated -o results/
 ```
 
-4. Adjust counts of VMPlex repertoires with OAR statistics, calculated in 3)
+4. Adjust counts of VMPlex repertoires with OAR statistics, calculated in 3), without the further iteration
 ```shell
 iroar Count --voar results/iROAR_run_XXXXXXXXXXXXXX.V_OAR_stat.json \
-    --joar results/iROAR_run_XXXXXXXXXXXXXX.J_OAR_stat.json example/vmplex_simulated results/
+    --joar results/iROAR_run_XXXXXXXXXXXXXX.J_OAR_stat.json -i example/vmplex_simulated -o results/
 ```
 
-5. The same as 4), but without the further iteration
+5. The same as 4), but add two rounds of recalculation using repertoires statistics
 ```shell
-iroar Count -iter 1 --voar results/iROAR_run_XXXXXXXXXXXXXX.V_OAR_stat.json \
-    --joar results/iROAR_run_XXXXXXXXXXXXXX.J_OAR_stat.json example/vmplex_simulated results/
+iroar Count -iter 2 --voar results/iROAR_run_XXXXXXXXXXXXXX.V_OAR_stat.json \
+    --joar results/iROAR_run_XXXXXXXXXXXXXX.J_OAR_stat.json -i example/vmplex_simulated -o results/
 ```
 
 ## Usage
 ### Count
 `Count` command evaluates Over Aplification Rate for input VDJtools-formated tables.
 ```
-iroar Count [options] <input> <output>
+iroar Count [options] -i <input> -o <output>
       
-<input>: Input directory containing VDJtools tables
-<output>: Output directory path
+-i <input>, --input <input>: Input directory containing VDJtools tables
+-o <output>, --output <output>: Output directory path
 
 **Optional arguments:**
 --long: Do not overwrite standard VDJtools columns instead of adding new ones (default=False)
@@ -187,7 +187,7 @@ iroar Merge [options] -p <input> -o <output>
 iroar Filter [options] -i <input> -o <output>
 
   -i <input>, --input <input>: Path of input VDJtools table
-  -o <output>, --output <output>: Path of output VDJtools table
+  -o <output>, --output <output>: Path of filtered VDJtools table
 
 **Optional arguments:**    
   -se <float>, --seq_error <float>: Probable error of sequencing (default=0.01)
@@ -201,8 +201,8 @@ iroar Filter [options] -i <input> -o <output>
 ```
 iroar Bias [options] <input> <output>
       
-  <input>: Path of input VDJtools table
-  <output>: Path of biased VDJtools table
+  -i <input>, --input <input>: Path of input VDJtools table
+  -o <output>, --output <output>: Path of biased VDJtools table
 
 **Optional arguments:**
   --seed <int>: Randomization seed (default=0)
