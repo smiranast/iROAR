@@ -81,7 +81,7 @@ class OAR_counter:
 
         df_new = df.copy()
         df_new["masked"] = False
-
+        
         for _ in range(self.n_outliers):
             df_new_big = df_new.loc[~df_new["small"]]
             df_new["masked"] |= df_new_big.groupby(['v'])['count'].transform(max) == df_new_big['count']
@@ -91,6 +91,7 @@ class OAR_counter:
         df_bad = df[~df["level_0"].isin(df_new["level_0"])]
         df_new.drop(columns=["level_0", "masked", "small"], inplace=True)
         df_bad.drop(columns=["level_0", "small"], inplace=True)
+        print(df_new.shape[0])
 
         #warning in case there are unique V/J genes in outlier clones that don't meet in normal ones
         all_bad = list(df_bad["v"].unique()) + list(df_bad["j"].unique())
@@ -224,7 +225,7 @@ class OAR_counter:
                 or (self.upper_only and OAR < 1) #Change OAR coefficient to not less than 1
                 or (self.v_only and gene_type == "j"))): # Ignore J-genes OAR for the further calculation
                     OAR = 1.
-            
+            #print(f"gene: {gene}, freq_precalc: {freq_clones[gene]}, clones: {clones}, clones_total:{df.loc[df['chain'] == 'TRB'].shape[0]}, count_total: {total_reads[gene[:3]]}, count_clone: {reads}")
             if not isnan(OAR):
                 OAR = OAR**self.momentum   
  
@@ -373,10 +374,10 @@ class OAR_counter:
         
         self.V_dict_meta = {k: {"chain": None, "reads": [], "clones": [], 
                                 "OAR_log": [], "OAR_begin": [], "OAR_end": [],
-                                "out-of-frame": None, "sample": None} for k in self.genes_v}
+                                "out-of-frame": None, "sample": []} for k in self.genes_v}
         self.J_dict_meta = {k: {"chain": None, "reads": [], "clones": [], 
                                 "OAR_log": [], "OAR_begin": [], "OAR_end": [],
-                                "out-of-frame": None, "sample": None} for k in self.genes_j}
+                                "out-of-frame": None, "sample": []} for k in self.genes_j}
         # Statistics abount count / clones for all out-of-frames in each sample
         self.oof_stat = {c: [] for c in chains}
         
@@ -406,14 +407,14 @@ class OAR_counter:
            
             for k, v in self.V_dict_meta.items():
                 v["chain"] = V_dict[k]["chain"]
-                v["sample"] = V_dict[k]["sample"]
+                v["sample"].append(V_dict[k]["sample"])
                 v["reads"].append(V_dict[k]["reads"])
                 v["clones"].append(V_dict[k]["clones"])
                 v["OAR_begin"].append(V_dict[k]["OAR"])
                           
             for k, v in self.J_dict_meta.items():
                 v["chain"] = J_dict[k]["chain"]
-                v["sample"] = J_dict[k]["sample"]
+                v["sample"].append(J_dict[k]["sample"])
                 v["reads"].append(J_dict[k]["reads"])
                 v["clones"].append(J_dict[k]["clones"])
                 v["OAR_begin"].append(J_dict[k]["OAR"])
@@ -449,12 +450,12 @@ class OAR_counter:
             for k, v in mean_v.items():
                 self.V_dict_meta[k]["OAR_log"] = [v["OAR"]]
                 self.V_dict_meta[k]["out-of-frame"] = v["out-of-frame"]
-                self.V_dict_meta[k]["sample"] = "out-of-frame" if v["out-of-frame"] and v["OAR"] else "all"
+                #self.V_dict_meta[k]["sample"] = "out-of-frame" if v["out-of-frame"] and v["OAR"] else "all"
                 
             for k, v in mean_j.items():
                 self.J_dict_meta[k]["OAR_log"] = [v["OAR"]]
                 self.J_dict_meta[k]["out-of-frame"] = v["out-of-frame"]
-                self.J_dict_meta[k]["sample"] = "out-of-frame" if v["out-of-frame"] and v["OAR"] else "all"
+                #self.J_dict_meta[k]["sample"] = "out-of-frame" if v["out-of-frame"] and v["OAR"] else "all"
 
         if self.own_table: # Make pseudo-libs
             mean_v = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_v}
@@ -515,13 +516,13 @@ class OAR_counter:
             for k, v in self.V_dict_meta.items():
                 if i_iter == 1:
                     v["out-of-frame"] = mean_v[k]["out-of-frame"]
-                    v["sample"] = "out-of-frame" if mean_v[k]["out-of-frame"] and mean_v[k]["OAR"] else "all"
+                    #v["sample"] = "out-of-frame" if mean_v[k]["out-of-frame"] and mean_v[k]["OAR"] else "all"
                 v["OAR_log"].append(mean_v[k]["OAR"])
 
             for k, v in self.J_dict_meta.items():
                 if i_iter == 1:
                     v["out-of-frame"] = mean_j[k]["out-of-frame"]
-                    v["sample"] = "out-of-frame" if mean_j[k]["out-of-frame"] and mean_j[k]["OAR"] else "all"
+                    #v["sample"] = "out-of-frame" if mean_j[k]["out-of-frame"] and mean_j[k]["OAR"] else "all"
                 v["OAR_log"].append(mean_j[k]["OAR"])   
 
             error, verb_mess = self._calc_iter_error(mean_v, mean_j, i_iter)
@@ -723,13 +724,15 @@ def make_report(args, tables, reports_dir, prefix, oof_stat, region_dicts, thres
         clones_cols = [f"clones_{i+1}" for i in range(len(tables))]
         oar_begin_cols = [f"OAR_begin_{i+1}" for i in range(len(tables))]
         oar_end_cols = [f"OAR_end_{i+1}" for i in range(len(tables))]
+        sample_cols = [f"sample_{i+1}" for i in range(len(tables))]
         df_stat[reads_cols] = pd.DataFrame(df_stat["reads"].tolist(), index=df_stat.index)
         df_stat[clones_cols] = pd.DataFrame(df_stat["clones"].tolist(), index=df_stat.index)
+        df_stat[sample_cols] = pd.DataFrame(df_stat["sample"].tolist(), index=df_stat.index)
 
         df_stat[oar_begin_cols] = pd.DataFrame(df_stat["OAR_begin"].tolist(), index=df_stat.index).pow(1. / momentum)
         df_stat[oar_end_cols] = pd.DataFrame(df_stat["OAR_end"].tolist(), index=df_stat.index).pow(1. / momentum)
         df_stat["OAR norm"] = np.nan
-        df_stat = df_stat[["genes", "chain"] + reads_cols + clones_cols + oar_begin_cols + oar_end_cols + ["OAR", "OAR norm", "sample"]]  
+        df_stat = df_stat[["genes", "chain"] + reads_cols + clones_cols + oar_begin_cols + oar_end_cols + sample_cols + ["OAR", "OAR norm"]]
         df_stat["OAR"] = pd.to_numeric(df_stat["OAR"]).pow(1. / momentum)
         df_stat.loc[df_stat[reads_cols+clones_cols].isin([0]).all(axis=1), "OAR"] = np.nan # Do not show OAR for genes absent in the repertoires
         df_stat["OAR norm"] = df_stat["OAR"] / df_stat["OAR"].mean(skipna=True)
@@ -786,7 +789,7 @@ def main(**kwargs):
         parser.add_argument("-o", "--output",  help = "Output directory path", type=str, metavar='<output>', required=True)
         parser.add_argument("--long", help = "Do not overwrite standard VDJtools columns instead of adding new ones\n(default=False)", action='store_false')
         parser.add_argument("-c", "--chains", help = "List of chains to analyse, sepatated by comma", type=str, metavar='<chain1>,<chain2>...<chainN>', default="IGH,IGK,IGL,TRA,TRB,TRD,TRG")
-        parser.add_argument("-z", "--outliers", help = "Do not include top-N clones for each gene in OAR calculation\n(default=1)", metavar='<int>', type=int, default=1)
+        parser.add_argument("-z", "--outliers", help = "Do not include top-N clones for each gene in OAR calculation\n(default=0)", metavar='<int>', type=int, default=0)
         parser.add_argument("-zd", "--outliers_depth", help = "Minilal number of clones for each gene, where outliers filtration is applied\n(default=10)", metavar='<int>', type=int, default=10)
         parser.add_argument("-f" ,"--all_frame", help = "Calculate OAR using all clones, not only out-of-frame", action='store_true')
         parser.add_argument("-min_outframe", help = "Minimal out-of-frame clones threshold for OAR calculation.\nIf a segment is present within less clones than the specified value\nOAR is equal to 1(if outframe = True)", default=0, type=int, metavar='<int>')
@@ -872,7 +875,6 @@ Otherwise, only pre-loaded libraries are used for adjustment (iter=0)""", type=i
     if len(vdjtools_tables) == 0:
         print("No VDJtools tabled is found. Exiting")
         sys.exit(1)
-    
     #main part
     collision_filter =  FilterSubclones(args.indel,
                               args.seq_error,
