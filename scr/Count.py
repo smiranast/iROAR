@@ -84,15 +84,27 @@ class OAR_counter:
         
         for _ in range(self.n_outliers):
             df_new_big = df_new.loc[~df_new["small"]]
-            df_new["masked"] |= df_new_big.groupby(['v'])['count'].transform(max) == df_new_big['count']
-            df_new["masked"] |= df_new_big.groupby(['j'])['count'].transform(max) == df_new_big['count']
+
+            # If it is a maximal value in group
+            v_mask_max = df_new_big.groupby(['v'])['count'].transform(max) == df_new_big['count']
+            j_mask_max = df_new_big.groupby(['j'])['count'].transform(max) == df_new_big['count']
+            # If this count in unique within group
+            v_mask_unique = df_new_big.groupby(['v', 'count'])['count'].transform('count') == 1
+            j_mask_unique = df_new_big.groupby(['j', 'count'])['count'].transform('count') == 1
+            # If this clone is not the only one in group
+            v_mask_nonly = df_new_big.groupby(['v'])['count'].transform('count') > 1
+            j_mask_nonly = df_new_big.groupby(['j'])['count'].transform('count') > 1
+                        
+            df_new["masked"] |= v_mask_max & v_mask_unique & v_mask_nonly
+            df_new["masked"] |= j_mask_max & j_mask_unique & j_mask_nonly
+    
             df_new = df_new.loc[~df_new["masked"]].reset_index()
             df_new.drop(columns=["index"], inplace=True)
+
         df_bad = df[~df["level_0"].isin(df_new["level_0"])]
         df_new.drop(columns=["level_0", "masked", "small"], inplace=True)
         df_bad.drop(columns=["level_0", "small"], inplace=True)
-        print(df_new.shape[0])
-
+        
         #warning in case there are unique V/J genes in outlier clones that don't meet in normal ones
         all_bad = list(df_bad["v"].unique()) + list(df_bad["j"].unique())
         all_new = list(df_new["v"].unique()) + list(df_new["j"].unique())
@@ -225,7 +237,6 @@ class OAR_counter:
                 or (self.upper_only and OAR < 1) #Change OAR coefficient to not less than 1
                 or (self.v_only and gene_type == "j"))): # Ignore J-genes OAR for the further calculation
                     OAR = 1.
-            #print(f"gene: {gene}, freq_precalc: {freq_clones[gene]}, clones: {clones}, clones_total:{df.loc[df['chain'] == 'TRB'].shape[0]}, count_total: {total_reads[gene[:3]]}, count_clone: {reads}")
             if not isnan(OAR):
                 OAR = OAR**self.momentum   
  
