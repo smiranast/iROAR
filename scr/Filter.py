@@ -10,12 +10,13 @@ from scr.modules import *
 
 class FilterSubclones:
     
-    def __init__(self, indel_thr, seq_err, filter_type, iterative, iroar_path):
+    def __init__(self, indel_thr, seq_err, filter_type, iterative, iroar_path, outframe_mask):
         self.indel_thr = indel_thr
         self.seq_err = seq_err
         self.iroar_path = iroar_path
         self.filter_types = ["all"] if "all" in filter_type else filter_type
         self.iterative = True if "all" in filter_type else iterative
+        self.outframe_mask = outframe_mask
         
     @staticmethod
     def _DL_distance(s1, s2):
@@ -69,7 +70,7 @@ class FilterSubclones:
         if "all" in filter_types:
             cdr3_cor = self._compare_clonal_df(df, df, cdr3_cor, "all")
 
-        gene_names = gene_names_parser(self.iroar_path, df["chain"].unique())
+        gene_names = gene_names_parser(self.iroar_path, df["chain"].unique(), self.outframe_mask)
         df_inframe = gene_names.filter_outframes(df, outframes=False, save_index=False)
         df_outframe = gene_names.filter_outframes(df, outframes=True, save_index=False)
 
@@ -126,6 +127,7 @@ def main(**kwargs):
         parser.add_argument("-o", "--output",  help = "Path of output VDJtools table", type=str, metavar='<output>', required=True)
         parser.add_argument("-se", "--seq_error", help = "Probable error of sequencing (default=0.01)", default=0.01, type=float, metavar='<float>')
         parser.add_argument("-id", "--indel",  help = "Maximal amount of indels to concidering CDR3s to be identical (default=1)", default=1, type=int, metavar='<int>')
+        parser.add_argument("-om" ,"--outframe_mask", help = "Groups of rearrangements being considered to be out-of-frame. Possible values:\n - U (Uncomplete rearrangements),\n - O (outframe with * and/or _ in CDR3aa),\n - L (without \'C\' at the begining and \'W/F\' at the end Letter of CDR3aa),\n - G (pseudo- and ORF Genes)", default="O",type=str, metavar="<UOLG>")                
         parser.add_argument("-ft", "--filter_type",  help = "Which frame groups are compared during the filtering (default=all)", choices=['IinO', 'OinI', 'all'], default="all", metavar='<list>', nargs='+')
         parser.add_argument("-if", "--iterative_filter",  help = "Apply itterative collision merge (default for --filter_type=all)", action='store_true')        
         args = parser.parse_args()
@@ -133,6 +135,13 @@ def main(**kwargs):
         if len(sys.argv)==1:
             parser.print_help(sys.stderr)
             sys.exit(1)         
+
+    #check out-of-frame mask correctness
+    outframe_mask = set(args.outframe_mask)
+    if len(outframe_mask - {"U", "O", "L", "G"}) > 0:
+        print("Wrong out-of-frame mask format. Exiting")
+        sys.exit(1)
+
     ####
     #main part
     iroar_path = os.path.dirname(os.path.realpath(__file__))
@@ -143,7 +152,8 @@ def main(**kwargs):
                              seq_err=args.seq_error,
                              filter_type=args.filter_type,
                              iterative=args.iterative_filter,
-                             iroar_path=iroar_path)
+                             iroar_path=iroar_path,
+                             outframe_mask=outframe_mask)
     df_filt = Filter.filter_subclones(df)
     df_filt.drop(columns=["chain"], inplace=True)
     df_filt.to_csv(args.output, sep="\t", index=False)

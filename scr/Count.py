@@ -38,7 +38,7 @@ class OAR_counter:
     
     def __init__(self, iroar_path, outframe, own_table, n_outliers, outliers_depth,
                  oar_lib_v, oar_lib_j, n_iter, err, filter_few, upper_only, min_oof_clones,
-                    short, prefilt, collision_filter, momentum):
+                    short, prefilt, collision_filter, momentum, outframe_mask):
         
         self.outframe = outframe
         self.own_table = own_table
@@ -61,6 +61,7 @@ class OAR_counter:
         self.prefilt = prefilt
         self.collision_filter = collision_filter
         self.momentum = momentum
+        self.outframe_mask = outframe_mask
             
             
     #Add "-D" or "-A" to the end of TRA/TRD genes to distinguish normal and hybrid
@@ -252,7 +253,7 @@ class OAR_counter:
 
 
     def count_OAR(self, df, outframe, verbosity):
-        gene_names = gene_names_parser(self.iroar_path, self.chains)
+        gene_names = gene_names_parser(self.iroar_path, self.chains, self.outframe_mask)
         if outframe:
             df = gene_names.filter_outframes(df, outframes=True)
             
@@ -377,7 +378,7 @@ class OAR_counter:
         
         
         if not (self.genes_v and self.genes_j):
-            gene_names = gene_names_parser(self.iroar_path, self.chains)
+            gene_names = gene_names_parser(self.iroar_path, self.chains, self.outframe_mask)
             self.genes_dict_v = gene_names.get_gene_list("V", func="all")
             self.genes_dict_j = gene_names.get_gene_list("J", func="all")
             self.genes_v = sum(self.genes_dict_v.values(), [])
@@ -803,6 +804,7 @@ def main(**kwargs):
         parser.add_argument("-z", "--outliers", help = "Do not include top-N clones for each gene in OAR calculation\n(default=0)", metavar='<int>', type=int, default=0)
         parser.add_argument("-zd", "--outliers_depth", help = "Minilal number of clones for each gene, where outliers filtration is applied\n(default=10)", metavar='<int>', type=int, default=10)
         parser.add_argument("-f" ,"--all_frame", help = "Calculate OAR using all clones, not only out-of-frame", action='store_true')
+        parser.add_argument("-om" ,"--outframe_mask", help = "Groups of rearrangements being considered to be out-of-frame. Possible values:\n - U (Uncomplete rearrangements),\n - O (outframe with * and/or _ in CDR3aa),\n - L (without \'C\' at the begining and \'W/F\' at the end Letter of CDR3aa),\n - G (pseudo- and ORF Genes)", default="O",type=str, metavar="<UOLG>")                
         parser.add_argument("-min_outframe", help = "Minimal out-of-frame clones threshold for OAR calculation.\nIf a segment is present within less clones than the specified value\nOAR is equal to 1(if outframe = True)", default=0, type=int, metavar='<int>')
         parser.add_argument("-filter_few", help = "Don't show clones with counts less than N before ceiling (default=show all)", default=0, type=float, metavar='<float>')
         parser.add_argument("-u", "--upper_only", help = "Adjust only counts which have OAR > 1", action='store_true')
@@ -886,12 +888,20 @@ Otherwise, only pre-loaded libraries are used for adjustment (iter=0)""", type=i
     if len(vdjtools_tables) == 0:
         print("No VDJtools tabled is found. Exiting")
         sys.exit(1)
+
+    #check out-of-frame mask correctness
+    outframe_mask = set(args.outframe_mask)
+    if len(outframe_mask - {"U", "O", "L", "G"}) > 0:
+        print("Wrong out-of-frame mask format. Exiting")
+        sys.exit(1)
+
     #main part
     collision_filter =  FilterSubclones(args.indel,
                               args.seq_error,
                               args.filter_type,
                               args.iterative_filter,
-                              iroar_path)
+                              iroar_path,
+                              outframe_mask=outframe_mask)
             
     recounter = OAR_counter(iroar_path=iroar_path,
                             outframe=outframe,
@@ -908,7 +918,8 @@ Otherwise, only pre-loaded libraries are used for adjustment (iter=0)""", type=i
                             short=args.long,
                             prefilt=args.filter,
                             collision_filter=collision_filter,
-                            momentum=momentum)                    
+                            momentum=momentum,
+                            outframe_mask=outframe_mask)                    
     
     recounter.cloneCount_adjust(vdjtools_tables, output_dir, chains, v_only, verbosity)
     

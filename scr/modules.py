@@ -5,9 +5,10 @@ import pandas as pd
 
 class gene_names_parser:
     
-    def __init__(self, iroar_path, chains):
+    def __init__(self, iroar_path, chains, outframe_mask):
         self.iroar_path = iroar_path
         self.chains = chains
+        self.outframe_mask = outframe_mask
         
     def get_gene_list(self, region, func):
         #Functional genes - "F" only
@@ -33,15 +34,15 @@ class gene_names_parser:
                            df["v"].str.contains("Intron") |
                            df["j"].str.contains("KDE"))
         outframe_cdr3_mask = (df["cdr3aa"].str.contains("_") | 
-                            df["cdr3aa"].str.contains("\*") |
-                            ~df["cdr3aa"].str.startswith("C") |
+                            df["cdr3aa"].str.contains("\*"))
+        outframe_letter_mask = (~df["cdr3aa"].str.startswith("C") |
                             ~(df["cdr3aa"].str.endswith("W") | df["cdr3aa"].str.endswith("F")))
-            
+
+        outframe_dict = dict(U=uncomplete_mask, O=outframe_cdr3_mask,
+                             L=outframe_letter_mask, G=outframe_genes_mask)    
         df["ind"] = list(df.index)
-        if outframes:
-            df = df[uncomplete_mask | outframe_cdr3_mask | outframe_genes_mask ]
-        else:
-            df = df[~(uncomplete_mask | outframe_cdr3_mask | outframe_genes_mask)]
+        outframe_cond = (sum([outframe_dict[k] for k in self.outframe_mask]) > 0).values
+        df = df[outframe_cond] if outframes else df[~outframe_cond]
         if not save_index:
             df.index = df["ind"]
             del df.index.name
