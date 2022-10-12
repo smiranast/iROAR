@@ -408,7 +408,8 @@ class OAR_counter:
                 print(f'Calculating primary reads/clones statistics for {os.path.basename(file)}')
 
             #get clone statistics for initial clone counts
-            for group in gene_names.filter_outframes(df_f, outframes=True).groupby("chain"):
+            x = gene_names.filter_outframes(df_f, outframes=True) if self.outframe else df_f
+            for group in x.groupby("chain"):
                 self.oof_stat[group[0]].append(group[1][f'count'].sum() / len(group[1]))
 
             df_f = self.filter_outliers(df_f, verbosity) if self.n_outliers else df_f
