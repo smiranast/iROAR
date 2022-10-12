@@ -52,8 +52,11 @@ class OAR_counter:
         self.filter_few = filter_few
         self.upper_only = upper_only
         self.min_oof_clones = min_oof_clones
-        self.freq_clones_v = None
-        self.freq_clones_j = None
+        # False - if not checked
+        # [False, dict()] - if own frequencies are used
+        # [True, dict(<smth>)] - if precalculated frequences are used
+        self.freq_clones_precalc_v = False
+        self.freq_clones_precalc_j = False
         self.genes_v = None
         self.genes_j = None
         self.clonal_freq_warning = True
@@ -157,8 +160,26 @@ class OAR_counter:
                 print("WARNING! Following genes meet only in outlier clones: {}".format(" ,".join([str(i) for i in uniq_bad])), file = sys.stderr)
         return df_new
     """
+
+    def _calculate_frequencies(self, df, gene_type):
+        #get numbers of clones from the input dataset
+        freq_clones = dict()
+        gene_dict = self.genes_dict_v if gene_type == "V" else self.genes_dict_j
+
+        for chain in self.chains:
+            total_clones_chain = df.loc[df["chain"] == chain].shape[0]
+            if total_clones_chain == 0:
+                for gene in gene_dict[chain]:
+                    freq_clones[gene] = 0
+            else:
+                for gene in gene_dict[chain]:
+                    freq_clones[gene] = df.loc[df[gene_type.lower()] == gene, ["count", gene_type.lower()]].shape[0]
+                    #freq_clones[gene] += 1e-6
+                    freq_clones[gene] /= total_clones_chain
+        return freq_clones
         
-    def _check_clones(self, df, gene_dict, gene_type):
+
+    def _check_clones(self, df, gene_type):
         #get the precalculated numbers of clones for each gene
         freq_clones_precalc_raw, freq_clones_precalc = dict(), dict()
         
@@ -170,44 +191,38 @@ class OAR_counter:
         for k, v in freq_clones_precalc_raw.items():
             freq_clones_precalc[k] = v["AVG"]
             
-        #get numbers of clones from the input dataset
-        freq_clones = {chain: dict() for chain in self.chains}
         
         if_good = True
 
-        for chain in self.chains:
-            total_clones_chain = df.loc[df["chain"] == chain].shape[0]
-            if total_clones_chain == 0:
-                for gene in gene_dict[chain]:
-                    freq_clones[gene] = 0
-            else:
-                #use pseudocounts to get rid from freq = 0
-                #despite situations when there is no clones for the chain
-                for gene in gene_dict[chain]:
-                    freq_clones[gene] = df.loc[df[gene_type.lower()] == gene, ["count", gene_type.lower()]].shape[0]
-                    #freq_clones[gene] += 1e-6
-                    freq_clones[gene] /= total_clones_chain
-                    popul_data = freq_clones_precalc_raw.get(gene, None)
-                    if popul_data: #if population frequence for this gene calculated
-                        #three sigma rule is used
-                        sigma = 3*popul_data["STDEV"]
-                        if freq_clones[gene] > popul_data["AVG"] + sigma or freq_clones[gene] < popul_data["AVG"] - sigma:
-                            if_good = False
+        freq_clones = self._calculate_frequencies(df, gene_type)
 
-        #if all frequencies are similar to populational ones
-        return freq_clones, freq_clones_precalc, if_good
+        for chain in self.chains:
+            for gene in freq_clones:
+                popul_data = freq_clones_precalc_raw.get(gene, None)
+                if popul_data and popul_data["AVG"] != 0:
+                    #three sigma rule is used
+                    sigma = 3*popul_data["STDEV"]
+                    if freq_clones[gene] > popul_data["AVG"] + sigma or freq_clones[gene] < popul_data["AVG"] - sigma:
+                        if_good = False
+
+        # return the info if frequences are similar to populational and themselves
+        return if_good, freq_clones_precalc
     
 
     def _clones_statistics(self, df, gene_list, outframe, gene_type):
         gene_reads, gene_clones, chains = [], [], []
         gene_X, gene_Y, gene_OAR, gene_oof_n = [], [], [], []
-        freq_clones = self.freq_clones_v if gene_type == "V" else self.freq_clones_j
-        
+
+        freq_clones_precalc = self.freq_clones_precalc_v if gene_type == "V" else self.freq_clones_precalc_j
+        freq_clones = freq_clones_precalc[1] if freq_clones_precalc[0] else self._calculate_frequencies(df, gene_type)
+
+
         total_reads = {chain: df.loc[df["chain"] == chain]["count"].sum() for chain in
                        ["IGH", "IGK", "IGL", "TRA", "TRB", "TRD", "TRG"]}
 
         for gene in gene_list:
             df_gene = df.loc[df[gene_type.lower()] == gene, ["count", gene_type.lower()]]
+                
             X = freq_clones[gene]
             if df_gene.empty:
                 reads, clones = 0, 0
@@ -233,6 +248,7 @@ class OAR_counter:
             gene_clones.append(int(clones))
             
             OAR = Y / X if X != 0 and Y != 0 else np.nan
+
             if (not (isnan(OAR))
                 and ((outframe and int(clones) < self.min_oof_clones) # If this gene has less out-of-frame than N
                 or (self.upper_only and OAR < 1) #Change OAR coefficient to not less than 1
@@ -252,14 +268,16 @@ class OAR_counter:
                 for k, v1,v2,v3,v4,v5 in zip(gene_list, chains, gene_reads, gene_clones, gene_OAR, gene_oof_n)}
 
 
-    def count_OAR(self, df, outframe, verbosity):
+    def count_OAR(self, df, outframe, verbosity): ####### Переписать
         gene_names = gene_names_parser(self.iroar_path, self.chains, self.outframe_mask)
         if outframe:
             df = gene_names.filter_outframes(df, outframes=True)
             
-        if not (self.freq_clones_v and self.freq_clones_j):
-            self.freq_clones_v, freq_clones_precalc_v, if_good_v = self._check_clones(df, self.genes_dict_v, "V")
-            self.freq_clones_j, freq_clones_precalc_j, if_good_j = self._check_clones(df, self.genes_dict_j, "J")
+        if not (self.freq_clones_precalc_v and self.freq_clones_precalc_j): # If it was not previously checked
+            if_good_v, freq_clones_precalc_v = self._check_clones(df, "V")
+            if_good_j, freq_clones_precalc_j = self._check_clones(df, "J")
+            self.freq_clones_precalc_v = [if_good_v, freq_clones_precalc_v]
+            self.freq_clones_precalc_j = [if_good_v, freq_clones_precalc_j]
 
             if (not if_good_v or not if_good_j) and self.clonal_freq_warning and self.n_iter != 0:
                 print("Clonal frequencies of the input data differs sufficiently to populational!")
@@ -267,8 +285,8 @@ class OAR_counter:
                 while not (yn == "yes" or yn == "y" or yn == "no" or yn == "n"):
                     yn = input("Print 'yes' or 'no' ('y' or 'n')\n").lower().strip().strip("\n")
                 if yn == "yes" or yn == "y":
-                    self.freq_clones_v = freq_clones_precalc_v
-                    self.freq_clones_j = freq_clones_precalc_j
+                    self.freq_clones_precalc_v = [True, freq_clones_precalc_v]
+                    self.freq_clones_precalc_j = [True, freq_clones_precalc_j]
                 self.clonal_freq_warning = False
         
         V_stat_dict = self._clones_statistics(df, self.genes_v, outframe, "V")
@@ -282,7 +300,6 @@ class OAR_counter:
         for v in J_stat_dict.values():
             if np.isnan(v["OAR"]) == False:
                 v["sample"] = s
-
         return V_stat_dict, J_stat_dict
 
 
@@ -326,7 +343,6 @@ class OAR_counter:
             J_dict.update({k:v for k,v in J_dict_a.items() if np.isnan(J_dict[k]["OAR"]) or J_dict[k]["OAR"] == 0})
         else:
             V_dict, J_dict = self.count_OAR(df, outframe=False, verbosity=verbosity)
-        
         if recalc:            
             #adjust previuos count with new V_dict and J_dict for the next iteration. Use simple variant of dict
             df["count"] = df.apply(self.clone_recount, args=(simple_dict(V_dict), simple_dict(J_dict), bsc, verbosity), axis=1)
@@ -474,7 +490,6 @@ class OAR_counter:
             mean_v = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_v}
             mean_j = {k:{"OAR": 1., "out-of-frame": 0, "sample": "all"} for k in self.genes_j}
 
-
         # Recalculate with loaded or pseudo-libs
         tmp_df_files, tmp_V_dict_files, tmp_J_dict_files = [], [], []
                     
@@ -512,10 +527,17 @@ class OAR_counter:
 
         i_iter, error = 1, np.inf
 
+        #######
+        # Вставить предварительный подсчет частот для каждого файла
+        # Если они сильно отличаются от популяционных, записать в файл популяционные
+        #######
+
+        #freq_dict_vj = {tmp_file: dict(V=dict(), J=dict())}
+        
         while (i_iter <= self.n_iter) and (error > self.err): # Now run the iteration
             for tmp_file, tmp_V_dict_file, tmp_J_dict_file in zip(tmp_df_files, tmp_V_dict_files, tmp_J_dict_files):
                 V_dict, J_dict = self._cloneCount_adjust_pair(tmp_file, bsc, recalc=True, verbosity=verbosity)
-
+            
                 with open(tmp_V_dict_file, 'w') as f1, open(tmp_J_dict_file, 'w') as f2:
                     json.dump(simple_dict(V_dict), f1)
                     json.dump(simple_dict(J_dict), f2)
@@ -737,6 +759,7 @@ def make_report(args, tables, reports_dir, prefix, oof_stat, region_dicts, thres
         clones_cols = [f"clones_{i+1}" for i in range(len(tables))]
         oar_begin_cols = [f"OAR_begin_{i+1}" for i in range(len(tables))]
         oar_end_cols = [f"OAR_end_{i+1}" for i in range(len(tables))]
+        oar_end_norm_cols = [f"OAR_end_{i+1}_norm" for i in range(len(tables))]
         sample_cols = [f"sample_{i+1}" for i in range(len(tables))]
         df_stat[reads_cols] = pd.DataFrame(df_stat["reads"].tolist(), index=df_stat.index)
         df_stat[clones_cols] = pd.DataFrame(df_stat["clones"].tolist(), index=df_stat.index)
@@ -744,11 +767,12 @@ def make_report(args, tables, reports_dir, prefix, oof_stat, region_dicts, thres
 
         df_stat[oar_begin_cols] = pd.DataFrame(df_stat["OAR_begin"].tolist(), index=df_stat.index).pow(1. / momentum)
         df_stat[oar_end_cols] = pd.DataFrame(df_stat["OAR_end"].tolist(), index=df_stat.index).pow(1. / momentum)
-        df_stat["OAR norm"] = np.nan
-        df_stat = df_stat[["genes", "chain"] + reads_cols + clones_cols + oar_begin_cols + oar_end_cols + sample_cols + ["OAR", "OAR norm"]]
+        df_stat[oar_end_norm_cols] = df_stat[oar_end_cols] / df_stat[oar_end_cols].mean(axis=0,skipna=True)      
+        df_stat["OAR_norm"] = np.nan
+        df_stat = df_stat[["genes", "chain"] + reads_cols + clones_cols + oar_begin_cols + oar_end_cols + oar_end_norm_cols + ["OAR", "OAR_norm"] + sample_cols]
         df_stat["OAR"] = pd.to_numeric(df_stat["OAR"]).pow(1. / momentum)
         df_stat.loc[df_stat[reads_cols+clones_cols].isin([0]).all(axis=1), "OAR"] = np.nan # Do not show OAR for genes absent in the repertoires
-        df_stat["OAR norm"] = df_stat["OAR"] / df_stat["OAR"].mean(skipna=True)
+        df_stat["OAR_norm"] = df_stat["OAR"] / df_stat["OAR"].mean(skipna=True)
         df_stat.columns=pd.MultiIndex.from_product([[f'General statistics information for {region} region'],df_stat.columns])
         report_stat = df_stat.to_html(index=False)
         
