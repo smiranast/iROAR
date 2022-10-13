@@ -48,15 +48,11 @@ class OAR_counter:
         self.oar_lib_j = oar_lib_j
         self.err = err
         self.n_iter = n_iter
+        self.freq_clones_own = True
         self.iroar_path = iroar_path
         self.filter_few = filter_few
         self.upper_only = upper_only
         self.min_oof_clones = min_oof_clones
-        # False - if not checked
-        # [False, dict()] - if own frequencies are used
-        # [True, dict(<smth>)] - if precalculated frequences are used
-        self.freq_clones_precalc_v = False
-        self.freq_clones_precalc_j = False
         self.genes_v = None
         self.genes_j = None
         self.clonal_freq_warning = True
@@ -206,16 +202,35 @@ class OAR_counter:
                         if_good = False
 
         # return the info if frequences are similar to populational and themselves
-        return if_good, freq_clones_precalc
+        return if_good, freq_clones_precalc, freq_clones
     
 
-    def _clones_statistics(self, df, gene_list, outframe, gene_type):
+    def check_clones_pair(self, df, idx, input_list_freqs):
+        if_good_v, freq_clones_precalc_v, freq_clones_v = self._check_clones(df, "V")
+        if_good_j, freq_clones_precalc_j, freq_clones_j = self._check_clones(df, "J")
+
+        freq_clones = dict(V=freq_clones_v, J=freq_clones_j)
+        with open(input_list_freqs[idx], 'wb') as f:
+            pickle.dump(freq_clones, f)
+
+        if (not if_good_v or not if_good_j) and self.clonal_freq_warning:
+            print("Clonal frequencies of the input data differs sufficiently to populational!")
+            yn = input("Use populational frequencies instead? yes/no\n").lower().strip("\n")
+            while not (yn == "yes" or yn == "y" or yn == "no" or yn == "n"):
+                yn = input("Print 'yes' or 'no' ('y' or 'n')\n").lower().strip().strip("\n")
+            if yn == "yes" or yn == "y":
+                freq_clones_precalc = dict(V=freq_clones_precalc_v, J=freq_clones_precalc_j)
+                for freq_file_2 in input_list_freqs:
+                    with open(freq_file_2, 'wb') as f:
+                        pickle.dump(freq_clones_precalc, f)
+                self.freq_clones_own = False
+    
+            self.clonal_freq_warning = False
+
+
+    def _clones_statistics(self, df, freq_clones, gene_list, outframe, gene_type):
         gene_reads, gene_clones, chains = [], [], []
         gene_X, gene_Y, gene_OAR, gene_oof_n = [], [], [], []
-
-        freq_clones_precalc = self.freq_clones_precalc_v if gene_type == "V" else self.freq_clones_precalc_j
-        freq_clones = freq_clones_precalc[1] if freq_clones_precalc[0] else self._calculate_frequencies(df, gene_type)
-
 
         total_reads = {chain: df.loc[df["chain"] == chain]["count"].sum() for chain in
                        ["IGH", "IGK", "IGL", "TRA", "TRB", "TRD", "TRG"]}
@@ -268,29 +283,13 @@ class OAR_counter:
                 for k, v1,v2,v3,v4,v5 in zip(gene_list, chains, gene_reads, gene_clones, gene_OAR, gene_oof_n)}
 
 
-    def count_OAR(self, df, outframe, verbosity): ####### Переписать
+    def count_OAR(self, df, freq_clones, outframe, verbosity):
         gene_names = gene_names_parser(self.iroar_path, self.chains, self.outframe_mask)
         if outframe:
             df = gene_names.filter_outframes(df, outframes=True)
-            
-        if not (self.freq_clones_precalc_v and self.freq_clones_precalc_j): # If it was not previously checked
-            if_good_v, freq_clones_precalc_v = self._check_clones(df, "V")
-            if_good_j, freq_clones_precalc_j = self._check_clones(df, "J")
-            self.freq_clones_precalc_v = [if_good_v, freq_clones_precalc_v]
-            self.freq_clones_precalc_j = [if_good_v, freq_clones_precalc_j]
-
-            if (not if_good_v or not if_good_j) and self.clonal_freq_warning and self.n_iter != 0:
-                print("Clonal frequencies of the input data differs sufficiently to populational!")
-                yn = input("Use populational frequencies instead? yes/no\n").lower().strip("\n")
-                while not (yn == "yes" or yn == "y" or yn == "no" or yn == "n"):
-                    yn = input("Print 'yes' or 'no' ('y' or 'n')\n").lower().strip().strip("\n")
-                if yn == "yes" or yn == "y":
-                    self.freq_clones_precalc_v = [True, freq_clones_precalc_v]
-                    self.freq_clones_precalc_j = [True, freq_clones_precalc_j]
-                self.clonal_freq_warning = False
         
-        V_stat_dict = self._clones_statistics(df, self.genes_v, outframe, "V")
-        J_stat_dict = self._clones_statistics(df, self.genes_j, outframe, "J")
+        V_stat_dict = self._clones_statistics(df, freq_clones["V"], self.genes_v, outframe, "V")
+        J_stat_dict = self._clones_statistics(df, freq_clones["J"], self.genes_j, outframe, "J")
  
         s = "out-of-frame" if outframe else "all"
     
@@ -331,18 +330,21 @@ class OAR_counter:
             raise
     
     
-    def _cloneCount_adjust_pair(self, tmp_file, bsc, recalc, verbosity):
+    def _cloneCount_adjust_pair(self, tmp_file, bsc, freq_file, recalc, verbosity):
         with open(tmp_file, 'rb') as f:
             df = pickle.load(f)
         
+        with open(freq_file, 'rb') as f:
+            freq_clones = pickle.load(f)
+
         #Calculates V_dict and J_dict
         if self.outframe:
-            V_dict, J_dict =  self.count_OAR(df, outframe=True, verbosity=verbosity)
-            V_dict_a, J_dict_a = self.count_OAR(df, outframe=False, verbosity=verbosity)
+            V_dict, J_dict =  self.count_OAR(df, freq_clones, outframe=True, verbosity=verbosity)
+            V_dict_a, J_dict_a = self.count_OAR(df, freq_clones, outframe=False, verbosity=verbosity)
             V_dict.update({k:v for k,v in V_dict_a.items() if np.isnan(V_dict[k]["OAR"]) or V_dict[k]["OAR"] == 0})
             J_dict.update({k:v for k,v in J_dict_a.items() if np.isnan(J_dict[k]["OAR"]) or J_dict[k]["OAR"] == 0})
         else:
-            V_dict, J_dict = self.count_OAR(df, outframe=False, verbosity=verbosity)
+            V_dict, J_dict = self.count_OAR(df, freq_clones, outframe=False, verbosity=verbosity)
         if recalc:            
             #adjust previuos count with new V_dict and J_dict for the next iteration. Use simple variant of dict
             df["count"] = df.apply(self.clone_recount, args=(simple_dict(V_dict), simple_dict(J_dict), bsc, verbosity), axis=1)
@@ -391,7 +393,7 @@ class OAR_counter:
         
         input_list_processed = [tmp_dir + "/" + os.path.splitext(os.path.basename(file))[0]+ ".pr" for file in input_list]
         input_list_filtered = [tmp_dir + "/" + os.path.splitext(os.path.basename(file))[0]+ ".flt" for file in input_list]
-        
+        tmp_freqs = [tmp_dir + "/" + os.path.splitext(os.path.basename(file))[0]+ ".freq" for file in input_list]
         
         if not (self.genes_v and self.genes_j):
             gene_names = gene_names_parser(self.iroar_path, self.chains, self.outframe_mask)
@@ -409,7 +411,7 @@ class OAR_counter:
         # Statistics abount count / clones for all out-of-frames in each sample
         self.oof_stat = {c: [] for c in chains}
         
-        for x, (file, processed_file, filtered_file) in enumerate(zip(input_list, input_list_processed, input_list_filtered)):
+        for idx, (file, processed_file, filtered_file, freq_file) in enumerate(zip(input_list, input_list_processed, input_list_filtered, tmp_freqs)):
             df = pd.read_csv(file, delimiter="\t")
             df["chain"] = get_chain(df)
             df = df[df['chain'].isin(self.chains)]
@@ -420,6 +422,8 @@ class OAR_counter:
                 
             df_f = self.collision_filter.filter_subclones(df) if self.prefilt else df
 
+            df = None
+
             if verbosity:
                 print(f'Calculating primary reads/clones statistics for {os.path.basename(file)}')
 
@@ -428,11 +432,21 @@ class OAR_counter:
             for group in x.groupby("chain"):
                 self.oof_stat[group[0]].append(group[1][f'count'].sum() / len(group[1]))
 
+            for chain, oof in self.oof_stat.items():
+                if not oof:
+                    self.oof_stat[chain] = [np.nan]
+
             df_f = self.filter_outliers(df_f, verbosity) if self.n_outliers else df_f
             with open(filtered_file, 'wb') as f:
                 pickle.dump(df_f, f)
-            
-            V_dict, J_dict = self._cloneCount_adjust_pair(filtered_file, bsc, recalc=False, verbosity=verbosity)
+
+            # Get clonal frequencies for a sample, save to file
+            if self.freq_clones_own:
+                self.check_clones_pair(x, idx, tmp_freqs)             
+
+            x = None
+
+            V_dict, J_dict = self._cloneCount_adjust_pair(filtered_file, bsc, freq_file, recalc=False, verbosity=verbosity)
            
             for k, v in self.V_dict_meta.items():
                 v["chain"] = V_dict[k]["chain"]
@@ -527,16 +541,9 @@ class OAR_counter:
 
         i_iter, error = 1, np.inf
 
-        #######
-        # Вставить предварительный подсчет частот для каждого файла
-        # Если они сильно отличаются от популяционных, записать в файл популяционные
-        #######
-
-        #freq_dict_vj = {tmp_file: dict(V=dict(), J=dict())}
-        
         while (i_iter <= self.n_iter) and (error > self.err): # Now run the iteration
-            for tmp_file, tmp_V_dict_file, tmp_J_dict_file in zip(tmp_df_files, tmp_V_dict_files, tmp_J_dict_files):
-                V_dict, J_dict = self._cloneCount_adjust_pair(tmp_file, bsc, recalc=True, verbosity=verbosity)
+            for tmp_file, tmp_V_dict_file, tmp_J_dict_file, freq_file in zip(tmp_df_files, tmp_V_dict_files, tmp_J_dict_files, tmp_freqs):
+                V_dict, J_dict = self._cloneCount_adjust_pair(tmp_file, bsc, freq_file, recalc=True, verbosity=verbosity)
             
                 with open(tmp_V_dict_file, 'w') as f1, open(tmp_J_dict_file, 'w') as f2:
                     json.dump(simple_dict(V_dict), f1)
@@ -569,8 +576,8 @@ class OAR_counter:
         else:
             # Count OAR of the recalculated tables, used for the report only
             print("Calculate the final OAR values")
-            for tmp_file, tmp_V_dict_file, tmp_J_dict_file in zip(tmp_df_files, tmp_V_dict_files, tmp_J_dict_files):
-                V_dict, J_dict = self._cloneCount_adjust_pair(tmp_file, bsc, recalc=True, verbosity=verbosity)
+            for tmp_file, tmp_V_dict_file, tmp_J_dict_file, freq_file in zip(tmp_df_files, tmp_V_dict_files, tmp_J_dict_files, tmp_freqs):
+                V_dict, J_dict = self._cloneCount_adjust_pair(tmp_file, bsc, freq_file, recalc=True, verbosity=verbosity)
                 for k, v in self.V_dict_meta.items():
                     v["OAR_end"].append(V_dict[k]["OAR"])
                               
@@ -579,7 +586,7 @@ class OAR_counter:
 
                     
         #remove created temp files
-        for file in input_list_filtered + tmp_df_files + tmp_V_dict_files + tmp_J_dict_files:
+        for file in input_list_filtered + tmp_df_files + tmp_V_dict_files + tmp_J_dict_files + tmp_freqs:
             if os.path.isfile(file):
                 os.remove(file)
                  
