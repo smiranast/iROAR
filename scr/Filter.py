@@ -147,7 +147,9 @@ def main(**kwargs):
     iroar_path = os.path.dirname(os.path.realpath(__file__))
     iroar_path = "/".join(iroar_path.split("/")[:-1])
 
-    df = pd.read_csv(args.input, delimiter="\t")   
+    with open(args.input) as f:
+        df = pd.read_csv(args.input, delimiter="\t",encoding=f['encoding'])
+
     Filter = FilterSubclones(indel_thr=args.indel,
                              seq_err=args.seq_error,
                              filter_type=args.filter_type,

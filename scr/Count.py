@@ -180,7 +180,7 @@ class OAR_counter:
         freq_clones_precalc_raw, freq_clones_precalc = dict(), dict()
         
         freq_clones_precalc_raw = pd.read_csv(f"{self.iroar_path}/aux/clonal_freq_{gene_type}.csv",
-                                              sep=",", index_col="genes")
+                                              sep=",", index_col="genes", encoding='ascii')
         freq_clones_precalc_raw = freq_clones_precalc_raw.to_dict(orient='index')
         
         #form freq_clones_precalc_raw without stdev
@@ -412,7 +412,8 @@ class OAR_counter:
         self.oof_stat = {c: [] for c in chains}
         
         for idx, (file, processed_file, filtered_file, freq_file) in enumerate(zip(input_list, input_list_processed, input_list_filtered, tmp_freqs)):
-            df = pd.read_csv(file, delimiter="\t")
+            with open(file) as f:
+                df = pd.read_csv(file, delimiter="\t",encoding=f.encoding)
             df["chain"] = get_chain(df)
             df = df[df['chain'].isin(self.chains)]
 
@@ -688,7 +689,8 @@ def download_germline(region, iroar_path, verbosity):
 
            
 def vdjtools_format_check(file):
-    df = pd.read_csv(file, delimiter="\t")
+    with open(file) as f:
+        df = pd.read_csv(file, delimiter="\t",encoding=f.encoding)
     #check "count" column separately as it can be both int and float
     if not "count" in df.columns:
         return False

@@ -80,7 +80,8 @@ def main(**kwargs):
     ####
     
     #main part
-    df = pd.read_csv(args.input, sep="\t")
+    with open(args.input) as f:
+        df = pd.read_csv(args.input, sep="\t",encoding=f['encoding'])
     oarbias = OARbias(seed=args.seed, method=args.method, noise=args.noise)
     df_adj = oarbias.add_bias(df)
     df_adj.to_csv(args.output, index=False, sep="\t")
