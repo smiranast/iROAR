@@ -109,10 +109,11 @@ iroar Count -m vjmplex -i example/vjmplex_simulated -o results/
 iroar Count -iter 1 --long -wj -i example/vmplex_simulated -o results/
 ```
 
-4. Adjust counts of VMPlex repertoires with OAR statistics, calculated in 3), without the further iteration
+4. Adjust counts of VMPlex repertoires with OAR statistics, calculated in 3), without the further iteration. Normalize OAR values on mean value
 ```shell
 iroar Count --voar results/iROAR_run_XXXXXXXXXXXXXX.V_OAR_stat.json \
-    --joar results/iROAR_run_XXXXXXXXXXXXXX.J_OAR_stat.json -i example/vmplex_simulated -o results/
+    --joar results/iROAR_run_XXXXXXXXXXXXXX.J_OAR_stat.json -i example/vmplex_simulated \
+    -o results/ --normalize mean
 ```
 
 5. The same as 4), but add two rounds of recalculation using repertoires statistics
@@ -133,12 +134,17 @@ iroar Count [options] -i <input> -o <output>
 **Optional arguments:**
 --long: Do not overwrite standard VDJtools columns instead of adding new ones (default=False)
 -c <str>, --chains <str>: List of chains to analyse, sepatated by comma (default=IGH,IGK,IGL,TRA,TRB,TRD,TRG)
--z <int>, --outliers <int>: Do not include top-N clones for each gene in OAR calculation (default=1)
+-z <int>, --outliers <int>: Do not include top-N clones for each gene in OAR calculation (default=0)
 -zd <int>, --outliers_depth <int>: Minilal number of clones for each gene, where outliers filtration is applied (default=10)
 -f ,--all_frame: Calculate OAR using all clones, not only out-of-frame
+-om <UOLG>, --outframe_mask <UOLG>: Groups of rearrangements being considered to be out-of-frame. Possible values:
+           - U (Uncomplete rearrangements),
+           - O (outframe with * and/or _ in CDR3aa),
+           - L (without 'C' at the begining and 'W/F' at the end Letter of CDR3aa),
+           - G (pseudo- and ORF Genes)
 -min_outframe <int>: Minimal out-of-frame clones threshold for OAR calculation.
-                   If a segment is present within less clones than the specified value. 
-                   OAR is equal to 1 (if outframe = True), default=0
+           If a segment is present within less clones than the specified value. 
+           OAR is equal to 1 (if outframe = True), default=0
 -filter_few <float>: Don't show clones with counts less than N before ceiling (default - show all)
 -u, --upper_only: Adjust only counts which have OAR > 1
 -m <str>, --method <str>: Method of sequencing library preparation. Possible values: 'vjmplex', 'vmplex' (default='vjmplex')
@@ -146,6 +152,7 @@ iroar Count [options] -i <input> -o <output>
 --joar <str>: Library of OAR stats for J region in JSON format.
             If multiple V and J libs are used the number of --voar files must be equal to --joarlib files
 -r <str>, --report <str>: Save the report into file
+--normalize <str>: An approach used for OAR values normalization. Possible values: 'mean', 'median' (default=no normalization)
 -wj ,--writejson: Write OAR statistics in json format (only OAR)
 -iter <int>: Maximal number of iteration (if owntable = True; default=infinite)
 -err <float>: Maximal absolute deviation (if owntable = True; default=0.1)
@@ -154,7 +161,7 @@ iroar Count [options] -i <input> -o <output>
 -se <float>, --seq_error <float>: Probable error of sequencing (default=0.01)
 -id <int>, --indel <int>: Maximal amount of indels to concidering CDR3s to be identical (default=1)
 -ft <str>, --filter_type <str>: Which frame groups are compared during the filtering.
-                              Possible values: 'IinO', 'OinI', 'all' (default=all)
+             Possible values: 'IinO', 'OinI', 'all' (default=all)
 -if, --iterative_filter: Apply itterative collision merge (default if --filter_type=all)
 -v, --verbosity: Print messages to stdout, not only warnings and errors (default=False)
 ```
