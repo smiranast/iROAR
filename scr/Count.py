@@ -299,7 +299,7 @@ class OAR_counter:
             raise
     
     
-    def _cloneCount_adjust_pair(self, tmp_file, bsc, freq_file, recalc, verbosity):
+    def _cloneCount_adjust_pair(self, tmp_file, freq_file, verbosity): # УБРАТЬ НЕНУЖНЫЕ АРГУМЕНТЫ (ИЗ КОДА ТОЖЕ)
         with open(tmp_file, 'rb') as f:
             df = pickle.load(f)
         
@@ -314,15 +314,32 @@ class OAR_counter:
             J_dict.update({k:v for k,v in J_dict_a.items() if np.isnan(J_dict[k]["OAR"]) or J_dict[k]["OAR"] == 0})
         else:
             V_dict, J_dict = self.count_OAR(df, freq_clones, outframe=False, verbosity=verbosity)
-        if recalc:            
-            #adjust previuos count with new V_dict and J_dict for the next iteration. Use simple variant of dict
-            df["count"] = df.apply(self.clone_recount, args=(simple_dict(V_dict), simple_dict(J_dict), bsc, verbosity), axis=1)
-
-            with open(tmp_file, 'wb') as f:
-                pickle.dump(df, f)
             
         return V_dict, J_dict
-                
+
+
+    def _repertoire_recalc(self, tmp_file, V_dict, J_dict, bsc, verbosity):
+        #adjust previous count with new V_dict and J_dict for the next iteration. Use simple variant of dict
+        #this function is purposed for iteration only without any output
+
+        with open(tmp_file, 'rb') as f:
+            df = pickle.load(f)
+
+        df["count"] = df.apply(self.clone_recount, args=(simple_dict(V_dict), simple_dict(J_dict), bsc, verbosity), axis=1)
+
+        with open(tmp_file, 'wb') as f:
+            pickle.dump(df, f)
+
+    def _normalize_OAR(self, gene_dict, normalization):
+        if normalization == "mean":
+            center = np.nanmean([v["OAR"] for v in gene_dict.values()])
+        else:
+            center = np.nanmedian([v["OAR"] for v in gene_dict.values()])
+
+        for gene in gene_dict:
+            gene_dict[gene]["OAR"] /= center
+        return gene_dict
+
         
     def _calc_iter_error(self, V_dict, J_dict, i_iter):
         v_OARs = np.array([v["OAR"] for v in V_dict.values()])
@@ -346,7 +363,7 @@ class OAR_counter:
         return error, verb_mess
         
     
-    def cloneCount_adjust(self, input_list, output_dir, chains, v_only, freq_clones_own, verbosity):
+    def cloneCount_adjust(self, input_list, output_dir, chains, v_only, freq_clones_own, normalization, verbosity):
         """
         V_dict(_a), J_dict(_a) - dictionaries of OAR, containing meta info, for current iteration
         self.V_dict_meta, self.J_dict_meta - dictionaries for all iterations with meta info. "OAR_log" - logged, \
@@ -416,7 +433,7 @@ class OAR_counter:
 
             x = None
 
-            V_dict, J_dict = self._cloneCount_adjust_pair(filtered_file, bsc, freq_file, recalc=False, verbosity=verbosity)
+            V_dict, J_dict = self._cloneCount_adjust_pair(filtered_file, freq_file, verbosity=verbosity)
            
             for k, v in self.V_dict_meta.items():
                 v["chain"] = V_dict[k]["chain"]
@@ -513,7 +530,7 @@ class OAR_counter:
 
         while (i_iter <= self.n_iter) and (error > self.err): # Now run the iteration
             for tmp_file, tmp_V_dict_file, tmp_J_dict_file, freq_file in zip(tmp_df_files, tmp_V_dict_files, tmp_J_dict_files, tmp_freqs):
-                V_dict, J_dict = self._cloneCount_adjust_pair(tmp_file, bsc, freq_file, recalc=True, verbosity=verbosity)
+                V_dict, J_dict = self._cloneCount_adjust_pair(tmp_file, freq_file, verbosity=verbosity)
             
                 with open(tmp_V_dict_file, 'w') as f1, open(tmp_J_dict_file, 'w') as f2:
                     json.dump(simple_dict(V_dict), f1)
@@ -522,8 +539,15 @@ class OAR_counter:
             mean_oar = mean_oar_counter(search_dir=None,
                                         file_list=tmp_V_dict_files + tmp_J_dict_files,
                                         min_outframe=0)
-            mean_v = mean_oar.count_mean("V")                    
-            mean_j = mean_oar.count_mean("J")
+            mean_v, mean_j = mean_oar.count_mean("V"), mean_oar.count_mean("J")
+
+            if normalization:
+                mean_v = self._normalize_OAR(mean_v, normalization)
+                mean_j = self._normalize_OAR(mean_j, normalization)
+
+            # Recalculate on mean OAR values through samples
+            for tmp_file in tmp_df_files:
+                self._repertoire_recalc(tmp_file, mean_v, mean_j, bsc,verbosity)
             
             for k, v in self.V_dict_meta.items():
                 if i_iter == 1:
@@ -547,7 +571,7 @@ class OAR_counter:
             # Count OAR of the recalculated tables, used for the report only
             print("Calculate the final OAR values")
             for tmp_file, tmp_V_dict_file, tmp_J_dict_file, freq_file in zip(tmp_df_files, tmp_V_dict_files, tmp_J_dict_files, tmp_freqs):
-                V_dict, J_dict = self._cloneCount_adjust_pair(tmp_file, bsc, freq_file, recalc=True, verbosity=verbosity)
+                V_dict, J_dict = self._cloneCount_adjust_pair(tmp_file, freq_file, verbosity=verbosity)
                 for k, v in self.V_dict_meta.items():
                     v["OAR_end"].append(V_dict[k]["OAR"])
                               
@@ -700,7 +724,7 @@ def json_df_converter(json_data):
                         "OAR_begin": oar_begin, "OAR_end": oar_end, "OAR": oar, "sample": sample})
     
 
-def make_report(args, tables, reports_dir, prefix, oof_stat, region_dicts, threshold, momentum):
+def make_report(args, tables, reports_dir, prefix, oof_stat, region_dicts, threshold, report_norm, momentum):
     pd.set_option('display.max_colwidth', -1)
     regions = ("V", "J") if len(region_dicts) == 2 else ("V",)
     #Info about input arguments
@@ -721,6 +745,7 @@ def make_report(args, tables, reports_dir, prefix, oof_stat, region_dicts, thres
     # Statistics about out-of-frame reads / clones
     df_oof = pd.DataFrame.from_dict(oof_stat, orient='index')
     df_oof.columns = [f'table_{i}' for i in range(1,len(tables) + 1)]
+    df_oof.dropna(thresh=1, inplace=True)
     df_oof.columns=pd.MultiIndex.from_product([[f'Reads/clones ratio for out-of-frame clones'],df_oof.columns])
     report_oof =  df_oof.to_html(justify="center")
 
@@ -737,7 +762,6 @@ def make_report(args, tables, reports_dir, prefix, oof_stat, region_dicts, thres
         clones_cols = [f"clones_{i+1}" for i in range(len(tables))]
         oar_begin_cols = [f"OAR_begin_{i+1}" for i in range(len(tables))]
         oar_end_cols = [f"OAR_end_{i+1}" for i in range(len(tables))]
-        oar_end_norm_cols = [f"OAR_end_{i+1}_norm" for i in range(len(tables))]
         sample_cols = [f"sample_{i+1}" for i in range(len(tables))]
         df_stat[reads_cols] = pd.DataFrame(df_stat["reads"].tolist(), index=df_stat.index)
         df_stat[clones_cols] = pd.DataFrame(df_stat["clones"].tolist(), index=df_stat.index)
@@ -745,13 +769,32 @@ def make_report(args, tables, reports_dir, prefix, oof_stat, region_dicts, thres
 
         df_stat[oar_begin_cols] = pd.DataFrame(df_stat["OAR_begin"].tolist(), index=df_stat.index).pow(1. / momentum)
         df_stat[oar_end_cols] = pd.DataFrame(df_stat["OAR_end"].tolist(), index=df_stat.index).pow(1. / momentum)
-        df_stat[oar_end_norm_cols] = df_stat[oar_end_cols] / df_stat[oar_end_cols].mean(axis=0,skipna=True)      
+
         df_stat["OAR_norm"] = np.nan
-        df_stat = df_stat[["genes", "chain"] + reads_cols + clones_cols + oar_begin_cols + oar_end_cols + oar_end_norm_cols + ["OAR", "OAR_norm"] + sample_cols]
-        df_stat["OAR"] = pd.to_numeric(df_stat["OAR"]).pow(1. / momentum)
+        
+        if report_norm == "mean":
+            df_stat[oar_begin_cols] = df_stat[oar_begin_cols] / df_stat[oar_begin_cols].mean(axis=0,skipna=True)
+            df_stat[oar_end_cols] = df_stat[oar_end_cols] / df_stat[oar_end_cols].mean(axis=0,skipna=True)
+            df_stat["OAR_norm"] = df_stat["OAR"] / df_stat["OAR"].mean(skipna=True)        
+        elif report_norm == "median":
+            df_stat[oar_begin_cols] = df_stat[oar_begin_cols] / df_stat[oar_begin_cols].median(axis=0,skipna=True)
+            df_stat[oar_end_cols] = df_stat[oar_end_cols] / df_stat[oar_end_cols].median(axis=0,skipna=True)        
+            df_stat["OAR_norm"] = df_stat["OAR"] / df_stat["OAR"].median(skipna=True)
+
+        col_list = ["genes", "chain"] + reads_cols + clones_cols + oar_begin_cols + oar_end_cols + ["OAR"]
+        col_list += ["OAR_norm"] if report_norm else []
+        col_list += sample_cols
+        df_stat = df_stat[col_list]
+
         df_stat.loc[df_stat[reads_cols+clones_cols].isin([0]).all(axis=1), "OAR"] = np.nan # Do not show OAR for genes absent in the repertoires
-        df_stat["OAR_norm"] = df_stat["OAR"] / df_stat["OAR"].mean(skipna=True)
+
+        if report_norm:
+            df_stat.rename(columns=dict(zip(oar_begin_cols, [_ + "_norm" for _ in oar_begin_cols])), inplace=True)
+            df_stat.rename(columns=dict(zip(oar_end_cols, [_ + "_norm" for _ in oar_end_cols])), inplace=True)
+        
+        df_stat.dropna(subset=["OAR"], inplace=True)
         df_stat.columns=pd.MultiIndex.from_product([[f'General statistics information for {region} region'],df_stat.columns])
+        
         report_stat = df_stat.to_html(index=False)
         
         #filter NaN
@@ -816,6 +859,9 @@ def main(**kwargs):
         parser.add_argument("--voar", help = "Library of OAR stats for V region in JSON format", type=str, default=[], metavar='<str>', nargs='+')
         parser.add_argument("--joar", help = "Library of OAR stats for J region in JSON format\nIf multiple V and J libs are used the number of --vlib files\nmust be equal to --jlib files!", type=str, default=[], metavar='<str>', nargs='+')
         parser.add_argument("-r" ,"--report", help = "Create report", action='store_true')
+
+        parser.add_argument("--normalize",  help = "An approach used for OAR values normalization (default=no normalization)", choices=['median', 'mean'], default=None, metavar='<str>')
+
         parser.add_argument("-wj" ,"--writejson", help = "Write OAR statistics in json format (only OAR)", action='store_true')
         parser.add_argument("-iter", help = """Maximal number of iteration of recalculation basing to the repertoire statistics. 
 Runs infinitely if no OAR_stats.json library is provided.
@@ -927,12 +973,13 @@ Otherwise, only pre-loaded libraries are used for adjustment (iter=0)""", type=i
                             outframe_mask=outframe_mask)                    
     
     recounter.cloneCount_adjust(vdjtools_tables, output_dir, chains, v_only,
-                                freq_clones_own, verbosity)
+                                freq_clones_own, args.normalize, verbosity)
     
     #write statistics files
     if args.report:
         region_dicts = (recounter.V_dict_meta, recounter.J_dict_meta) if not v_only else (recounter.V_dict_meta,)
-        make_report(args, vdjtools_tables, output_dir, prefix, recounter.oof_stat, region_dicts, args.err, momentum)
+        make_report(args, vdjtools_tables, output_dir, prefix, recounter.oof_stat,
+                    region_dicts, args.err, args.normalize, momentum)
     if args.writejson:
         write_stat_jsons(output_dir + "/" + prefix, recounter.V_dict_meta, "V")
         if not v_only:

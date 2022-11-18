@@ -29,6 +29,7 @@ def main():
     count_parser.add_argument("--voar", help = "Library of OAR stats for V region in JSON format", type=str, default=[], metavar='<str>', nargs='+')
     count_parser.add_argument("--joar", help = "Library of OAR stats for J region in JSON format\nIf multiple V and J libs are used the number of --vlib files\nmust be equal to --jlib files!", type=str, default=[], metavar='<str>', nargs='+')
     count_parser.add_argument("-r" ,"--report", help = "Create report", action='store_true')
+    count_parser.add_argument("--normalize",  help = "An approach used for OAR values normalization (default=no normalization)", choices=['median', 'mean'], default=None, metavar='<str>')
     count_parser.add_argument("-wj" ,"--writejson", help = "Write OAR statistics in json format (only OAR)", action='store_true')
     count_parser.add_argument("-iter", help = """Maximal number of iteration of recalculation basing to the repertoire statistics. 
 Runs infinitely if no OAR_stats.json library is provided.
