@@ -48,14 +48,12 @@ class OAR_counter:
         self.oar_lib_j = oar_lib_j
         self.err = err
         self.n_iter = n_iter
-        self.freq_clones_own = True
         self.iroar_path = iroar_path
         self.filter_few = filter_few
         self.upper_only = upper_only
         self.min_oof_clones = min_oof_clones
         self.genes_v = None
         self.genes_j = None
-        self.clonal_freq_warning = True
         self.short = short
         self.prefilt = prefilt
         self.collision_filter = collision_filter
@@ -176,56 +174,27 @@ class OAR_counter:
         
 
     def _check_clones(self, df, gene_type):
-        #get the precalculated numbers of clones for each gene
-        freq_clones_precalc_raw, freq_clones_precalc = dict(), dict()
-        
-        freq_clones_precalc_raw = pd.read_csv(f"{self.iroar_path}/aux/clonal_freq_{gene_type}.csv",
-                                              sep=",", index_col="genes", encoding='ascii')
-        freq_clones_precalc_raw = freq_clones_precalc_raw.to_dict(orient='index')
-        
-        #form freq_clones_precalc_raw without stdev
-        for k, v in freq_clones_precalc_raw.items():
-            freq_clones_precalc[k] = v["AVG"]
+        if self.freq_clones_own:
+            return self._calculate_frequencies(df, gene_type)
+        else:
+            #get the precalculated numbers of clones for each gene
+            freq_clones_raw, freq_clones = dict(), dict()
+            freq_clones_raw = pd.read_csv(f"{self.iroar_path}/aux/clonal_freq_{gene_type}.csv",
+                                                  sep=",", index_col="genes", encoding='ascii')
+            freq_clones_raw = freq_clones_raw.to_dict(orient='index')
             
-        
-        if_good = True
-
-        freq_clones = self._calculate_frequencies(df, gene_type)
-
-        for chain in self.chains:
-            for gene in freq_clones:
-                popul_data = freq_clones_precalc_raw.get(gene, None)
-                if popul_data and popul_data["AVG"] != 0:
-                    #three sigma rule is used
-                    sigma = 3*popul_data["STDEV"]
-                    if freq_clones[gene] > popul_data["AVG"] + sigma or freq_clones[gene] < popul_data["AVG"] - sigma:
-                        if_good = False
-
-        # return the info if frequences are similar to populational and themselves
-        return if_good, freq_clones_precalc, freq_clones
+            #form freq_clones_precalc_raw without stdev
+            for k, v in freq_clones_raw.items():
+                freq_clones[k] = v["AVG"]
+            return freq_clones
     
 
-    def check_clones_pair(self, df, idx, input_list_freqs):
-        if_good_v, freq_clones_precalc_v, freq_clones_v = self._check_clones(df, "V")
-        if_good_j, freq_clones_precalc_j, freq_clones_j = self._check_clones(df, "J")
-
+    def check_clones_pair(self, df, freq_file):
+        freq_clones_v, freq_clones_j = self._check_clones(df, "V"), self._check_clones(df, "J")
         freq_clones = dict(V=freq_clones_v, J=freq_clones_j)
-        with open(input_list_freqs[idx], 'wb') as f:
+                
+        with open(freq_file, 'wb') as f:
             pickle.dump(freq_clones, f)
-
-        if (not if_good_v or not if_good_j) and self.clonal_freq_warning:
-            print("Clonal frequencies of the input data differs sufficiently to populational!")
-            yn = input("Use populational frequencies instead? yes/no\n").lower().strip("\n")
-            while not (yn == "yes" or yn == "y" or yn == "no" or yn == "n"):
-                yn = input("Print 'yes' or 'no' ('y' or 'n')\n").lower().strip().strip("\n")
-            if yn == "yes" or yn == "y":
-                freq_clones_precalc = dict(V=freq_clones_precalc_v, J=freq_clones_precalc_j)
-                for freq_file_2 in input_list_freqs:
-                    with open(freq_file_2, 'wb') as f:
-                        pickle.dump(freq_clones_precalc, f)
-                self.freq_clones_own = False
-    
-            self.clonal_freq_warning = False
 
 
     def _clones_statistics(self, df, freq_clones, gene_list, outframe, gene_type):
@@ -377,7 +346,7 @@ class OAR_counter:
         return error, verb_mess
         
     
-    def cloneCount_adjust(self, input_list, output_dir, chains, v_only, verbosity):
+    def cloneCount_adjust(self, input_list, output_dir, chains, v_only, freq_clones_own, verbosity):
         """
         V_dict(_a), J_dict(_a) - dictionaries of OAR, containing meta info, for current iteration
         self.V_dict_meta, self.J_dict_meta - dictionaries for all iterations with meta info. "OAR_log" - logged, \
@@ -389,6 +358,7 @@ class OAR_counter:
         
         self.chains = chains
         self.v_only = v_only
+        self.freq_clones_own = freq_clones_own
         bsc = Bad_segment_counter()
         
         input_list_processed = [tmp_dir + "/" + os.path.splitext(os.path.basename(file))[0]+ ".pr" for file in input_list]
@@ -442,8 +412,7 @@ class OAR_counter:
                 pickle.dump(df_f, f)
 
             # Get clonal frequencies for a sample, save to file
-            if self.freq_clones_own:
-                self.check_clones_pair(x, idx, tmp_freqs)             
+            self.check_clones_pair(x, freq_file)             
 
             x = None
 
@@ -835,6 +804,7 @@ def main(**kwargs):
         parser.add_argument("-o", "--output",  help = "Output directory path", type=str, metavar='<output>', required=True)
         parser.add_argument("--long", help = "Do not overwrite standard VDJtools columns instead of adding new ones\n(default=False)", action='store_false')
         parser.add_argument("-c", "--chains", help = "List of chains to analyse, sepatated by comma", type=str, metavar='<chain1>,<chain2>...<chainN>', default="IGH,IGK,IGL,TRA,TRB,TRD,TRG")
+        parser.add_argument("-p","--popul",  help = "Use precalculated populational clonal frequencies instead of own ones (default=False)", action='store_true')
         parser.add_argument("-z", "--outliers", help = "Do not include top-N clones for each gene in OAR calculation\n(default=0)", metavar='<int>', type=int, default=0)
         parser.add_argument("-zd", "--outliers_depth", help = "Minilal number of clones for each gene, where outliers filtration is applied\n(default=10)", metavar='<int>', type=int, default=10)
         parser.add_argument("-f" ,"--all_frame", help = "Calculate OAR using all clones, not only out-of-frame", action='store_true')
@@ -875,6 +845,7 @@ Otherwise, only pre-loaded libraries are used for adjustment (iter=0)""", type=i
     chains = args.chains.split(",")
     momentum = args.momentum
     momentum = 1 if momentum > 1 else 0.01 if momentum < 0.01 else momentum
+    freq_clones_own = not args.popul
     
     iroar_path = os.path.dirname(os.path.realpath(__file__))
     iroar_path = "/".join(iroar_path.split("/")[:-1])
@@ -955,7 +926,8 @@ Otherwise, only pre-loaded libraries are used for adjustment (iter=0)""", type=i
                             momentum=momentum,
                             outframe_mask=outframe_mask)                    
     
-    recounter.cloneCount_adjust(vdjtools_tables, output_dir, chains, v_only, verbosity)
+    recounter.cloneCount_adjust(vdjtools_tables, output_dir, chains, v_only,
+                                freq_clones_own, verbosity)
     
     #write statistics files
     if args.report:
