@@ -74,34 +74,6 @@
             "type": "P"
         },
         {
-            "name": "IGHV1OR15-1",
-            "type": "ORF"
-        },
-        {
-            "name": "IGHV1OR15-2",
-            "type": "P"
-        },
-        {
-            "name": "IGHV1OR15-3",
-            "type": "P"
-        },
-        {
-            "name": "IGHV1OR15-4",
-            "type": "P"
-        },
-        {
-            "name": "IGHV1OR15-5",
-            "type": "ORF"
-        },
-        {
-            "name": "IGHV1OR15-9",
-            "type": "ORF"
-        },
-        {
-            "name": "IGHV1OR21-1",
-            "type": "ORF"
-        },
-        {
             "name": "IGHV2-10",
             "type": "P"
         },
@@ -120,10 +92,6 @@
         {
             "name": "IGHV2-70D",
             "type": "F"
-        },
-        {
-            "name": "IGHV2OR16-5",
-            "type": "ORF"
         },
         {
             "name": "IGHV3-11",
@@ -366,54 +334,6 @@
             "type": "F"
         },
         {
-            "name": "IGHV3OR15-7",
-            "type": "ORF"
-        },
-        {
-            "name": "IGHV3OR16-10",
-            "type": "ORF"
-        },
-        {
-            "name": "IGHV3OR16-11",
-            "type": "P"
-        },
-        {
-            "name": "IGHV3OR16-12",
-            "type": "ORF"
-        },
-        {
-            "name": "IGHV3OR16-13",
-            "type": "ORF"
-        },
-        {
-            "name": "IGHV3OR16-14",
-            "type": "P"
-        },
-        {
-            "name": "IGHV3OR16-15",
-            "type": "P"
-        },
-        {
-            "name": "IGHV3OR16-16",
-            "type": "P"
-        },
-        {
-            "name": "IGHV3OR16-6",
-            "type": "ORF"
-        },
-        {
-            "name": "IGHV3OR16-7",
-            "type": "P"
-        },
-        {
-            "name": "IGHV3OR16-8",
-            "type": "ORF"
-        },
-        {
-            "name": "IGHV3OR16-9",
-            "type": "ORF"
-        },
-        {
             "name": "IGHV4-28",
             "type": "F"
         },
@@ -464,10 +384,6 @@
         {
             "name": "IGHV4-80",
             "type": "P"
-        },
-        {
-            "name": "IGHV4OR15-8",
-            "type": "ORF"
         },
         {
             "name": "IGHV5-10-1",
@@ -616,78 +532,6 @@
             "type": "F"
         },
         {
-            "name": "IGKV1OR-2",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1OR-3",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1OR-4",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1OR1-1",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1OR10-1",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1OR15-118",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1OR2-0",
-            "type": "ORF"
-        },
-        {
-            "name": "IGKV1OR2-1",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1OR2-108",
-            "type": "ORF"
-        },
-        {
-            "name": "IGKV1OR2-11",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1OR2-118",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1OR2-2",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1OR2-3",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1OR2-9",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1OR22-5",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1OR9-1",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1OR9-2",
-            "type": "P"
-        },
-        {
-            "name": "IGKV1ORY-1",
-            "type": "P"
-        },
-        {
             "name": "IGKV2-18",
             "type": "P"
         },
@@ -744,14 +588,6 @@
             "type": "F"
         },
         {
-            "name": "IGKV2OR2-7D",
-            "type": "P"
-        },
-        {
-            "name": "IGKV2OR22-4",
-            "type": "P"
-        },
-        {
             "name": "IGKV3-11",
             "type": "F"
         },
@@ -782,10 +618,6 @@
         {
             "name": "IGKV3D-7",
             "type": "F"
-        },
-        {
-            "name": "IGKV3OR2-268",
-            "type": "ORF"
         },
         {
             "name": "IGKV4-1",
@@ -988,10 +820,6 @@
         {
             "name": "IGLV8-61",
             "type": "F"
-        },
-        {
-            "name": "IGLV8OR8-1",
-            "type": "ORF"
         },
         {
             "name": "IGLV9-49",
@@ -1326,15 +1154,7 @@
             "type": "F"
         },
         {
-            "name": "TRBV20OR9-2",
-            "type": "ORF"
-        },
-        {
             "name": "TRBV21-1",
-            "type": "P"
-        },
-        {
-            "name": "TRBV21OR9-2",
             "type": "P"
         },
 	{
@@ -1346,31 +1166,15 @@
             "type": "ORF"
         },
         {
-            "name": "TRBV23OR9-2",
-            "type": "ORF"
-        },
-        {
             "name": "TRBV24-1",
             "type": "F"
-        },
-        {
-            "name": "TRBV24OR9-2",
-            "type": "ORF"
         },
         {
             "name": "TRBV25-1",
             "type": "F"
         },
-	{
-            "name": "TRBV26OR9-2",
-            "type": "P"
-        },
         {
             "name": "TRBV26",
-            "type": "P"
-        },
-        {
-            "name": "TRBV26OR9-2",
             "type": "P"
         },
         {
@@ -1384,10 +1188,6 @@
         {
             "name": "TRBV29-1",
             "type": "F"
-        },
-        {
-            "name": "TRBV29OR9-2",
-            "type": "ORF"
         },
         {
             "name": "TRBV3-1",
@@ -1528,22 +1328,6 @@
         {
             "name": "TRBV9",
             "type": "F"
-        },
-        {
-            "name": "TRBVA",
-            "type": "P"
-        },
-        {
-            "name": "TRBVAOR9-2",
-            "type": "P"
-        },
-        {
-            "name": "TRBVB",
-            "type": "P"
-        },
-        {
-            "name": "TRBVC",
-            "type": "P"
         }
     ],
     "TRD": [
@@ -1816,10 +1600,6 @@
         {
             "name": "TRGV9",
             "type": "F"
-        },
-        {
-            "name": "TRGVA",
-            "type": "P"
         }
     ]
 }
